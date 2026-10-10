@@ -1,0 +1,41 @@
+services:
+  database:
+    image: postgres:17.7-alpine
+    environment:
+      POSTGRES_DB: chatty
+      POSTGRES_USER: chatty
+      POSTGRES_PASSWORD: chatty-local-demo
+    volumes: [chatty-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U chatty]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      DATABASE_URL: jdbc:postgresql://database:5432/chatty
+      DATABASE_USER: chatty
+      DATABASE_PASSWORD: chatty-local-demo
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-gemini-3.8-flash}
+      AI_MODE: ${AI_MODE:-auto}
+      AI_MODEL_MAX_ROUNDS: ${AI_MODEL_MAX_ROUNDS:-6}
+    ports: [127.0.0.1:8080:8080]
+    depends_on:
+      database: {condition: service_healthy}
+    healthcheck:
+      test: [CMD-SHELL, 'curl -fsS http://localhost:8080/api/v1/health || exit 1']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+  frontend:
+    build:
+      context: frontend
+    ports: [127.0.0.1:80:80]
+    depends_on:
+      backend: {condition: service_healthy}
+volumes:
+  chatty-data:

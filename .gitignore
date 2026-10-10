@@ -1,0 +1,21 @@
+# Local credentials and environment overrides
+.env
+.env.*
+!.env.example
+*.local.env
+
+# Local build and tooling output
+node_modules/
+target/
+dist/
+.DS_Store
+
+# Local persisted synthetic data and TypeScript incremental output
+/data/
+/backend/data/
+*.tsbuildinfo
+.runtime/
+
+# Personal editor settings
+.idea/
+.vscode/

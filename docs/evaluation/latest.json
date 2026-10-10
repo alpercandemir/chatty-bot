@@ -1,0 +1,702 @@
+{
+  "mode": "scripted",
+  "caseCount": 50,
+  "requestedExecutions": 50,
+  "completedExecutions": 50,
+  "passed": 50,
+  "abortedReason": null,
+  "p95JourneyMs": 131,
+  "results": [
+    {
+      "case": "D01-TRACKING",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 72
+    },
+    {
+      "case": "D02-CANCEL-SUCCESS",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 1,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [
+        "SUCCEEDED"
+      ],
+      "elapsedMs": 23
+    },
+    {
+      "case": "D03-ADDRESS-SUCCESS",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null,
+        null,
+        null
+      ],
+      "operationStatuses": [
+        "SUCCEEDED"
+      ],
+      "elapsedMs": 197
+    },
+    {
+      "case": "D04-SHIPPED-DENIAL-HANDOFF",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null,
+        null
+      ],
+      "operationStatuses": [
+        "SUCCEEDED"
+      ],
+      "elapsedMs": 75
+    },
+    {
+      "case": "D05-FULFILLMENT-LOCK",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 1,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 70
+    },
+    {
+      "case": "D06-SPLIT-SHIPMENT",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 69
+    },
+    {
+      "case": "D07-DELAY-NO-ETA",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 71
+    },
+    {
+      "case": "D08-OWNERSHIP",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null,
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 129
+    },
+    {
+      "case": "D09-FAQ-GROUNDING",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null,
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 133
+    },
+    {
+      "case": "D10-DECLINE",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 1,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [
+        "DECLINED"
+      ],
+      "elapsedMs": 74
+    },
+    {
+      "case": "D11-STALE-CONFIRMATION",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 1,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [
+        "REJECTED"
+      ],
+      "elapsedMs": 16
+    },
+    {
+      "case": "D12-UNKNOWN-THEN-RECONCILE",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 1,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [
+        "SUCCEEDED"
+      ],
+      "elapsedMs": 18
+    },
+    {
+      "case": "D13-CLEANING-CALLBACK",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null,
+        null
+      ],
+      "operationStatuses": [
+        "SUCCEEDED"
+      ],
+      "elapsedMs": 131
+    },
+    {
+      "case": "D14-CLEANING-CRM",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 1,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [
+        "SUCCEEDED"
+      ],
+      "elapsedMs": 9
+    },
+    {
+      "case": "D15-COUNTRY-DENIAL",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 1,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 65
+    },
+    {
+      "case": "D16-READ-TIMEOUT",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 67
+    },
+    {
+      "case": "D01-TRACKING-P1",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 68
+    },
+    {
+      "case": "D01-TRACKING-P2",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 66
+    },
+    {
+      "case": "D01-TRACKING-P3",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 66
+    },
+    {
+      "case": "D01-TRACKING-P4",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 64
+    },
+    {
+      "case": "D01-TRACKING-P5",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 68
+    },
+    {
+      "case": "D01-TRACKING-P6",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 66
+    },
+    {
+      "case": "D02-CANCEL-SUCCESS-P1",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 1,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [
+        "SUCCEEDED"
+      ],
+      "elapsedMs": 13
+    },
+    {
+      "case": "D02-CANCEL-SUCCESS-P2",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 1,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [
+        "SUCCEEDED"
+      ],
+      "elapsedMs": 12
+    },
+    {
+      "case": "D02-CANCEL-SUCCESS-P3",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 1,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [
+        "SUCCEEDED"
+      ],
+      "elapsedMs": 13
+    },
+    {
+      "case": "D02-CANCEL-SUCCESS-P4",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 1,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [
+        "SUCCEEDED"
+      ],
+      "elapsedMs": 11
+    },
+    {
+      "case": "D02-CANCEL-SUCCESS-P5",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 1,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [
+        "SUCCEEDED"
+      ],
+      "elapsedMs": 11
+    },
+    {
+      "case": "D02-CANCEL-SUCCESS-P6",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 1,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [
+        "SUCCEEDED"
+      ],
+      "elapsedMs": 12
+    },
+    {
+      "case": "D05-FULFILLMENT-LOCK-P1",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 1,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 66
+    },
+    {
+      "case": "D05-FULFILLMENT-LOCK-P2",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 1,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 66
+    },
+    {
+      "case": "D05-FULFILLMENT-LOCK-P3",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 1,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 76
+    },
+    {
+      "case": "D05-FULFILLMENT-LOCK-P4",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 1,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 20
+    },
+    {
+      "case": "D05-FULFILLMENT-LOCK-P5",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 1,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 10
+    },
+    {
+      "case": "D06-SPLIT-SHIPMENT-P1",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 62
+    },
+    {
+      "case": "D06-SPLIT-SHIPMENT-P2",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 65
+    },
+    {
+      "case": "D06-SPLIT-SHIPMENT-P3",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 64
+    },
+    {
+      "case": "D06-SPLIT-SHIPMENT-P4",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 66
+    },
+    {
+      "case": "D06-SPLIT-SHIPMENT-P5",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 67
+    },
+    {
+      "case": "D07-DELAY-NO-ETA-P1",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 65
+    },
+    {
+      "case": "D07-DELAY-NO-ETA-P2",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 64
+    },
+    {
+      "case": "D07-DELAY-NO-ETA-P3",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 70
+    },
+    {
+      "case": "D07-DELAY-NO-ETA-P4",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 66
+    },
+    {
+      "case": "D07-DELAY-NO-ETA-P5",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 67
+    },
+    {
+      "case": "D09-FAQ-GROUNDING-P1",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null,
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 13
+    },
+    {
+      "case": "D09-FAQ-GROUNDING-P2",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null,
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 68
+    },
+    {
+      "case": "D09-FAQ-GROUNDING-P3",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null,
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 69
+    },
+    {
+      "case": "D09-FAQ-GROUNDING-P4",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null,
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 16
+    },
+    {
+      "case": "D09-FAQ-GROUNDING-P5",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null,
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 125
+    },
+    {
+      "case": "D09-FAQ-GROUNDING-P6",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null,
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 124
+    },
+    {
+      "case": "D09-FAQ-GROUNDING-P7",
+      "repetition": 1,
+      "mode": "scripted",
+      "outcome": "PASS",
+      "modelRequests": 0,
+      "toolCalls": 2,
+      "providerUsage": [
+        null,
+        null
+      ],
+      "operationStatuses": [],
+      "elapsedMs": 68
+    }
+  ]
+}

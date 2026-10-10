@@ -1,0 +1,25 @@
+{
+  "status": "COMPLETED",
+  "model": "gemini-3.8-flash",
+  "modelRequests": 2,
+  "toolCalls": 2,
+  "usage": {
+    "totalTokenCount": 2915,
+    "latestRequest": {
+      "candidatesTokenCount": 89,
+      "promptTokenCount": 1714,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 1714
+        }
+      ],
+      "thoughtsTokenCount": 105,
+      "totalTokenCount": 1908
+    }
+  },
+  "answer": "Order NS-1002 has been shipped. \n\nShipment details:\n- Carrier: Demo Parcel\n- Tracking reference: DEMO-TRACK-1002\n- Status: In transit (Arrived at the Istanbul distribution center)\n- Estimated delivery: October 12, 2026",
+  "providerCauseType": null,
+  "providerError": null,
+  "errors": []
+}

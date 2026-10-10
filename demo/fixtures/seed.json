@@ -1,0 +1,117 @@
+{
+  "fixtureVersion": "1.0.0",
+  "description": "Synthetic business facts for the planned Chatty simulator. Not an application or a running API.",
+  "clock": {"strategy": "anchor_on_reset", "timezone": "Europe/Istanbul", "timestampUnit": "minutes_relative_to_reset"},
+  "workspaces": [
+    {"id": "demo-northstar", "scenarioPack": "commerce", "name": "Northstar Shop", "currency": "TRY", "supportedCountries": ["TR"]},
+    {"id": "demo-clearspace", "scenarioPack": "cleaning", "name": "ClearSpace Cleaning", "supportedAreas": ["Kadikoy", "Atasehir", "Umraniye"]}
+  ],
+  "principals": [
+    {"id": "customer-aylin", "workspaceId": "demo-northstar", "displayName": "Aylin Demo", "email": "aylin@example.invalid", "role": "customer"},
+    {"id": "customer-mert", "workspaceId": "demo-northstar", "displayName": "Mert Demo", "email": "mert@example.invalid", "role": "customer"},
+    {"id": "prospect-office", "workspaceId": "demo-clearspace", "displayName": "Office Prospect Demo", "email": "office@example.invalid", "role": "prospect"},
+    {"id": "prospect-crm", "workspaceId": "demo-clearspace", "displayName": "Cleaning Company Demo", "email": "crm@example.invalid", "role": "prospect"}
+  ],
+  "addresses": [
+    {"id": "address-aylin-home", "workspaceId": "demo-northstar", "principalId": "customer-aylin", "line1": "Demo Sokak 10, Daire 3", "district": "Kadikoy", "city": "Istanbul", "postalCode": "34000", "countryCode": "TR"},
+    {"id": "address-mert-home", "workspaceId": "demo-northstar", "principalId": "customer-mert", "line1": "Ornek Sokak 20, Daire 2", "district": "Atasehir", "city": "Istanbul", "postalCode": "34000", "countryCode": "TR"}
+  ],
+  "orders": [
+    {
+      "id": "NS-1001", "workspaceId": "demo-northstar", "principalId": "customer-aylin", "status": "PROCESSING", "version": 1,
+      "fulfillmentLocked": false, "addressId": "address-aylin-home", "placedAtOffsetMinutes": -120,
+      "items": [{"sku": "HEADPHONE-01", "name": "Demo Wireless Headphones", "quantity": 1, "unitPriceMinor": 249900}],
+      "totalMinor": 249900, "currency": "TRY", "paymentStatus": "PAID_SIMULATED", "refundStatus": "NOT_REQUESTED", "shipmentIds": []
+    },
+    {
+      "id": "NS-1002", "workspaceId": "demo-northstar", "principalId": "customer-aylin", "status": "SHIPPED", "version": 1,
+      "fulfillmentLocked": false, "addressId": "address-aylin-home", "placedAtOffsetMinutes": -2880,
+      "items": [{"sku": "KEYBOARD-01", "name": "Demo Mechanical Keyboard", "quantity": 1, "unitPriceMinor": 179900}],
+      "totalMinor": 179900, "currency": "TRY", "paymentStatus": "PAID_SIMULATED", "refundStatus": "NOT_REQUESTED", "shipmentIds": ["SHIP-1002-A"]
+    },
+    {
+      "id": "NS-1003", "workspaceId": "demo-northstar", "principalId": "customer-aylin", "status": "DELIVERED", "version": 1,
+      "fulfillmentLocked": false, "addressId": "address-aylin-home", "placedAtOffsetMinutes": -7200,
+      "items": [{"sku": "MOUSE-01", "name": "Demo Wireless Mouse", "quantity": 1, "unitPriceMinor": 79900}],
+      "totalMinor": 79900, "currency": "TRY", "paymentStatus": "PAID_SIMULATED", "refundStatus": "NOT_REQUESTED", "shipmentIds": ["SHIP-1003-A"]
+    },
+    {
+      "id": "NS-1004", "workspaceId": "demo-northstar", "principalId": "customer-aylin", "status": "CANCELLED", "version": 2,
+      "fulfillmentLocked": false, "addressId": "address-aylin-home", "placedAtOffsetMinutes": -1440,
+      "items": [{"sku": "WEBCAM-01", "name": "Demo Webcam", "quantity": 1, "unitPriceMinor": 129900}],
+      "totalMinor": 129900, "currency": "TRY", "paymentStatus": "PAID_SIMULATED", "refundStatus": "PROCESSING_REQUIRED_SIMULATED", "shipmentIds": []
+    },
+    {
+      "id": "NS-1005", "workspaceId": "demo-northstar", "principalId": "customer-aylin", "status": "PROCESSING", "version": 1,
+      "fulfillmentLocked": true, "addressId": "address-aylin-home", "placedAtOffsetMinutes": -360,
+      "items": [{"sku": "MONITOR-01", "name": "Demo Monitor", "quantity": 1, "unitPriceMinor": 699900}],
+      "totalMinor": 699900, "currency": "TRY", "paymentStatus": "PAID_SIMULATED", "refundStatus": "NOT_REQUESTED", "shipmentIds": []
+    },
+    {
+      "id": "NS-1006", "workspaceId": "demo-northstar", "principalId": "customer-aylin", "status": "PARTIALLY_SHIPPED", "version": 1,
+      "fulfillmentLocked": false, "addressId": "address-aylin-home", "placedAtOffsetMinutes": -2880,
+      "items": [{"sku": "LAPTOP-STAND-01", "name": "Demo Laptop Stand", "quantity": 1, "unitPriceMinor": 99900}, {"sku": "USB-HUB-01", "name": "Demo USB Hub", "quantity": 1, "unitPriceMinor": 59900}],
+      "totalMinor": 159800, "currency": "TRY", "paymentStatus": "PAID_SIMULATED", "refundStatus": "NOT_REQUESTED", "shipmentIds": ["SHIP-1006-A", "SHIP-1006-B"]
+    },
+    {
+      "id": "NS-1007", "workspaceId": "demo-northstar", "principalId": "customer-mert", "status": "PROCESSING", "version": 1,
+      "fulfillmentLocked": false, "addressId": "address-mert-home", "placedAtOffsetMinutes": -90,
+      "items": [{"sku": "SPEAKER-01", "name": "Demo Speaker", "quantity": 1, "unitPriceMinor": 149900}],
+      "totalMinor": 149900, "currency": "TRY", "paymentStatus": "PAID_SIMULATED", "refundStatus": "NOT_REQUESTED", "shipmentIds": []
+    },
+    {
+      "id": "NS-1008", "workspaceId": "demo-northstar", "principalId": "customer-aylin", "status": "SHIPPED", "version": 1,
+      "fulfillmentLocked": false, "addressId": "address-aylin-home", "placedAtOffsetMinutes": -4320,
+      "items": [{"sku": "DOCK-01", "name": "Demo Docking Station", "quantity": 1, "unitPriceMinor": 219900}],
+      "totalMinor": 219900, "currency": "TRY", "paymentStatus": "PAID_SIMULATED", "refundStatus": "NOT_REQUESTED", "shipmentIds": ["SHIP-1008-A"]
+    }
+  ],
+  "shipments": [
+    {
+      "id": "SHIP-1002-A", "workspaceId": "demo-northstar", "orderId": "NS-1002", "status": "IN_TRANSIT",
+      "carrier": "Demo Parcel", "trackingReference": "DEMO-TRACK-1002", "estimatedDeliveryOffsetMinutes": 2880, "itemSkus": ["KEYBOARD-01"],
+      "events": [{"status": "DISPATCHED", "occurredAtOffsetMinutes": -1440, "description": "Handed to the simulated carrier"}, {"status": "IN_TRANSIT", "occurredAtOffsetMinutes": -60, "description": "Arrived at the Istanbul distribution center"}]
+    },
+    {
+      "id": "SHIP-1003-A", "workspaceId": "demo-northstar", "orderId": "NS-1003", "status": "DELIVERED",
+      "carrier": "Demo Parcel", "trackingReference": "DEMO-TRACK-1003", "estimatedDeliveryOffsetMinutes": null, "itemSkus": ["MOUSE-01"],
+      "events": [{"status": "DISPATCHED", "occurredAtOffsetMinutes": -5760, "description": "Handed to the simulated carrier"}, {"status": "DELIVERED", "occurredAtOffsetMinutes": -2880, "description": "Delivery recorded by the simulated carrier"}]
+    },
+    {
+      "id": "SHIP-1006-A", "workspaceId": "demo-northstar", "orderId": "NS-1006", "status": "IN_TRANSIT",
+      "carrier": "Demo Parcel", "trackingReference": "DEMO-TRACK-1006-A", "estimatedDeliveryOffsetMinutes": 1440, "itemSkus": ["LAPTOP-STAND-01"],
+      "events": [{"status": "DISPATCHED", "occurredAtOffsetMinutes": -1440, "description": "Handed to the simulated carrier"}, {"status": "IN_TRANSIT", "occurredAtOffsetMinutes": -120, "description": "In transit to the destination depot"}]
+    },
+    {
+      "id": "SHIP-1006-B", "workspaceId": "demo-northstar", "orderId": "NS-1006", "status": "AWAITING_DISPATCH",
+      "carrier": null, "trackingReference": null, "estimatedDeliveryOffsetMinutes": null, "itemSkus": ["USB-HUB-01"],
+      "events": [{"status": "AWAITING_DISPATCH", "occurredAtOffsetMinutes": -120, "description": "Second package awaiting dispatch"}]
+    },
+    {
+      "id": "SHIP-1008-A", "workspaceId": "demo-northstar", "orderId": "NS-1008", "status": "DELAYED",
+      "carrier": "Demo Parcel", "trackingReference": "DEMO-TRACK-1008", "estimatedDeliveryOffsetMinutes": null, "itemSkus": ["DOCK-01"],
+      "events": [{"status": "DISPATCHED", "occurredAtOffsetMinutes": -2880, "description": "Handed to the simulated carrier"}, {"status": "DELAYED", "occurredAtOffsetMinutes": -30, "description": "Carrier reported a delay; revised delivery estimate unavailable"}]
+    }
+  ],
+  "knowledgeArticles": [
+    {"id": "NS-FAQ-CANCEL", "workspaceId": "demo-northstar", "version": 1, "title": "Demo cancellation policy", "content": "Whole-order cancellation is available only while an order is PROCESSING, no package has been dispatched, and fulfillment is not locked. Partial cancellation is not supported in this demo. Cancellation does not mean that a refund has completed."},
+    {"id": "NS-FAQ-ADDRESS", "workspaceId": "demo-northstar", "version": 1, "title": "Demo address changes", "content": "Delivery addresses can be changed before dispatch, only for PROCESSING orders without a fulfillment lock. Changes must stay within Turkey. Required fields are address line, district, city, postal code, and country. The demo does not verify postal deliverability."},
+    {"id": "NS-FAQ-RETURNS", "workspaceId": "demo-northstar", "version": 1, "title": "Demo returns policy", "content": "This fictional merchant accepts requests to return unopened products within 14 days of recorded delivery. Return submission and payment refunds are not implemented in the prototype. Create a support request for assistance. These are demo policies, not legal guidance."},
+    {"id": "NS-FAQ-SHIPPING", "workspaceId": "demo-northstar", "version": 1, "title": "Demo shipment information", "content": "Tracking cards show the latest simulated carrier event. Delivery estimates appear only when supplied by the carrier simulator. One order can contain multiple packages. An unavailable delivery estimate is not a promise of delivery tomorrow."},
+    {"id": "NS-FAQ-REFUND", "workspaceId": "demo-northstar", "version": 1, "title": "Demo refund status", "content": "All payments are synthetic. A canceled paid order is marked PROCESSING_REQUIRED_SIMULATED for refund follow-up. No money moves and no refund completion date is promised."},
+    {"id": "NS-FAQ-SUPPORT", "workspaceId": "demo-northstar", "version": 1, "title": "Demo human support", "content": "After customer confirmation, the assistant creates a support request in the local demo queue. This does not connect a live person or send an email. The request reference and queue status can be inspected by the presenter."},
+    {"id": "CS-FAQ-AREAS", "workspaceId": "demo-clearspace", "version": 1, "title": "Demo cleaning service areas", "content": "ClearSpace Cleaning serves offices and private properties in Kadikoy, Atasehir, and Umraniye. Other areas require human review; the assistant must not promise service availability there."},
+    {"id": "CS-FAQ-SERVICES", "workspaceId": "demo-clearspace", "version": 1, "title": "Demo cleaning services", "content": "The demo offers lead intake for recurring office cleaning and one-off private-property cleaning. Price depends on property size, location, frequency, and requirements. The assistant collects information for a quote and does not invent a fixed price."},
+    {"id": "CS-FAQ-CRM", "workspaceId": "demo-clearspace", "version": 1, "title": "Demo cleaning-business CRM", "content": "The fictional CRM supports cleaning-job planning, employee assignment, and revenue visibility. A cleaning company can request a product-demo callback by providing team size, its main need, and contact preference. Subscription pricing is not provided in the approved demo knowledge."},
+    {"id": "CS-FAQ-CALLBACK", "workspaceId": "demo-clearspace", "version": 1, "title": "Demo callback requests", "content": "A callback request stores a prospect's confirmed details in a simulated CRM. A preferred date or time is a preference, not a booked appointment. No external calendar, email, or phone call is triggered."}
+  ],
+  "cleaningProfiles": [
+    {"id": "profile-office", "workspaceId": "demo-clearspace", "principalId": "prospect-office", "interest": "CLEANING_SERVICE", "propertyType": "OFFICE", "sizeSquareMeters": 250, "area": "Atasehir", "frequency": "WEEKLY", "contactPreference": "EMAIL", "preferredCallbackWindow": "Next weekday afternoon", "contactEmail": "office@example.invalid"},
+    {"id": "profile-crm", "workspaceId": "demo-clearspace", "principalId": "prospect-crm", "interest": "CLEANING_CRM", "teamSize": 12, "mainNeed": "Job scheduling and employee assignment", "contactPreference": "EMAIL", "preferredCallbackWindow": "Next weekday morning", "contactEmail": "crm@example.invalid"}
+  ],
+  "initialRecords": {"supportTickets": [], "callbackRequests": [], "operations": []},
+  "demoInputs": {
+    "newAddress": {"line1": "Ornek Bulvar 25, Daire 5", "district": "Atasehir", "city": "Istanbul", "postalCode": "34000", "countryCode": "TR"},
+    "unsupportedAddress": {"line1": "Demo Avenue 5", "district": "Demo District", "city": "Berlin", "postalCode": "10115", "countryCode": "DE"}
+  }
+}

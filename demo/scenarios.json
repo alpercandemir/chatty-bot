@@ -1,0 +1,87 @@
+{
+  "scenarioVersion": "1.0.0",
+  "fixture": "fixtures/seed.json",
+  "description": "Proposed demo journeys and expected business outcomes. Each journey begins with an isolated fixture reset; live AI wording may vary.",
+  "scenarios": [
+    {
+      "id": "D01-TRACKING", "workspaceId": "demo-northstar", "principalId": "customer-aylin",
+      "steps": [{"message": "Where is order NS-1002?"}],
+      "expected": {"orderId": "NS-1002", "shipmentStatus": "IN_TRANSIT", "etaAvailable": true, "mutationCount": 0, "requiredFacts": ["Demo Parcel", "DEMO-TRACK-1002", "Latest event and estimated delivery from simulator"]}
+    },
+    {
+      "id": "D02-CANCEL-SUCCESS", "workspaceId": "demo-northstar", "principalId": "customer-aylin",
+      "steps": [{"message": "Cancel order NS-1001."}, {"uiAction": "CONFIRM_CURRENT_PROPOSAL"}, {"uiAction": "CONFIRM_SAME_PROPOSAL_AGAIN"}],
+      "expected": {"orderId": "NS-1001", "orderStatus": "CANCELLED", "orderVersion": 2, "operationStatus": "SUCCEEDED", "mutationCount": 1, "refundStatus": "PROCESSING_REQUIRED_SIMULATED"}
+    },
+    {
+      "id": "D03-ADDRESS-SUCCESS", "workspaceId": "demo-northstar", "principalId": "customer-aylin",
+      "steps": [{"message": "Change the delivery address for NS-1001."}, {"message": "Ornek Bulvar 25, Daire 5, Atasehir, Istanbul, 34000, Turkey."}, {"uiAction": "CONFIRM_CURRENT_PROPOSAL"}, {"message": "What is the delivery address for NS-1001 now?"}],
+      "expected": {"orderId": "NS-1001", "orderStatus": "PROCESSING", "orderVersion": 2, "addressMatches": "demoInputs.newAddress", "mutationCount": 1, "previousOrdersKeepOriginalAddress": true}
+    },
+    {
+      "id": "D04-SHIPPED-DENIAL-HANDOFF", "workspaceId": "demo-northstar", "principalId": "customer-aylin",
+      "steps": [{"message": "Cancel order NS-1002."}, {"message": "Please create a support request about this order."}, {"uiAction": "CONFIRM_CURRENT_PROPOSAL"}],
+      "expected": {"orderId": "NS-1002", "orderStatus": "SHIPPED", "policyCode": "ORDER_ALREADY_DISPATCHED", "orderMutationCount": 0, "supportTicketCount": 1, "supportStatus": "QUEUED"}
+    },
+    {
+      "id": "D05-FULFILLMENT-LOCK", "workspaceId": "demo-northstar", "principalId": "customer-aylin",
+      "steps": [{"message": "Cancel order NS-1005."}],
+      "expected": {"orderId": "NS-1005", "orderStatus": "PROCESSING", "policyCode": "FULFILLMENT_LOCKED", "mutationCount": 0, "confirmationOffered": false}
+    },
+    {
+      "id": "D06-SPLIT-SHIPMENT", "workspaceId": "demo-northstar", "principalId": "customer-aylin",
+      "steps": [{"message": "Where are the items in order NS-1006?"}],
+      "expected": {"orderId": "NS-1006", "shipmentStatuses": ["IN_TRANSIT", "AWAITING_DISPATCH"], "shipmentCount": 2, "mutationCount": 0, "unshippedPackageHasInventedEta": false}
+    },
+    {
+      "id": "D07-DELAY-NO-ETA", "workspaceId": "demo-northstar", "principalId": "customer-aylin",
+      "steps": [{"message": "When will order NS-1008 arrive?"}],
+      "expected": {"orderId": "NS-1008", "shipmentStatus": "DELAYED", "etaAvailable": false, "mutationCount": 0, "requiredFacts": ["Carrier delay", "Delivery estimate unavailable", "Support can be requested"]}
+    },
+    {
+      "id": "D08-OWNERSHIP", "workspaceId": "demo-northstar", "principalId": "customer-aylin",
+      "steps": [{"message": "Show me order NS-1007."}, {"message": "Show me order NS-9999."}],
+      "expected": {"publicErrorCode": "RESOURCE_NOT_AVAILABLE", "otherCustomerDataDisclosed": false, "mutationCount": 0, "unauthorizedAndMissingResponsesEquivalent": true}
+    },
+    {
+      "id": "D09-FAQ-GROUNDING", "workspaceId": "demo-northstar", "principalId": "customer-aylin",
+      "steps": [{"message": "What is your return policy?"}, {"message": "Will you extend my warranty for free?"}],
+      "expected": {"supportedAnswerSource": "NS-FAQ-RETURNS", "unsupportedAnswerAcknowledged": true, "mutationCount": 0, "requiredFacts": ["14 days after recorded delivery", "Unopened products", "Demo support request required"]}
+    },
+    {
+      "id": "D10-DECLINE", "workspaceId": "demo-northstar", "principalId": "customer-aylin",
+      "steps": [{"message": "Cancel order NS-1001."}, {"uiAction": "DECLINE_CURRENT_PROPOSAL"}],
+      "expected": {"orderId": "NS-1001", "orderStatus": "PROCESSING", "orderVersion": 1, "proposalStatus": "DECLINED", "mutationCount": 0}
+    },
+    {
+      "id": "D11-STALE-CONFIRMATION", "workspaceId": "demo-northstar", "principalId": "customer-aylin",
+      "steps": [{"message": "Cancel order NS-1001."}, {"presenterAction": "ADVANCE_ORDER_TO_SHIPPED", "orderId": "NS-1001"}, {"uiAction": "CONFIRM_CURRENT_PROPOSAL"}],
+      "expected": {"orderId": "NS-1001", "orderStatus": "SHIPPED", "operationStatus": "REJECTED", "errorCode": "RESOURCE_VERSION_CHANGED", "cancellationMutationCount": 0}
+    },
+    {
+      "id": "D12-UNKNOWN-THEN-RECONCILE", "workspaceId": "demo-northstar", "principalId": "customer-aylin",
+      "steps": [{"presenterAction": "ARM_FAULT", "fault": "WRITE_TIMEOUT_AFTER_COMMIT", "orderId": "NS-1001", "occurrences": 1}, {"message": "Cancel order NS-1001."}, {"uiAction": "CONFIRM_CURRENT_PROPOSAL"}, {"presenterAction": "RECONCILE_CURRENT_OPERATION"}],
+      "expected": {"orderId": "NS-1001", "orderStatus": "CANCELLED", "operationStatusesInOrder": ["UNKNOWN", "SUCCEEDED"], "mutationCount": 1, "successClaimBeforeReconciliation": false}
+    },
+    {
+      "id": "D13-CLEANING-CALLBACK", "workspaceId": "demo-clearspace", "principalId": "prospect-office",
+      "steps": [{"message": "Do you clean offices in Atasehir?"}, {"message": "I need weekly cleaning for a 250 square meter office. Please contact office@example.invalid next weekday afternoon."}, {"uiAction": "CONFIRM_CURRENT_PROPOSAL"}],
+      "expected": {"source": "CS-FAQ-AREAS", "callbackRequestCount": 1, "callbackStatus": "REQUESTED", "interest": "CLEANING_SERVICE", "calendarBookingCount": 0, "externalMessagesSent": 0}
+    },
+    {
+      "id": "D14-CLEANING-CRM", "workspaceId": "demo-clearspace", "principalId": "prospect-crm",
+      "steps": [{"message": "I run a cleaning company with 12 employees. I need help scheduling jobs and assigning employees. Can I request a CRM demo callback by email at crm@example.invalid next weekday morning?"}, {"uiAction": "CONFIRM_CURRENT_PROPOSAL"}],
+      "expected": {"callbackRequestCount": 1, "callbackStatus": "REQUESTED", "interest": "CLEANING_CRM", "calendarBookingCount": 0, "inventedSubscriptionPrice": false}
+    },
+    {
+      "id": "D15-COUNTRY-DENIAL", "workspaceId": "demo-northstar", "principalId": "customer-aylin",
+      "steps": [{"message": "Send order NS-1001 to Demo Avenue 5, Demo District, Berlin, 10115, Germany."}],
+      "expected": {"orderId": "NS-1001", "policyCode": "COUNTRY_CHANGE_NOT_SUPPORTED", "mutationCount": 0, "confirmationOffered": false}
+    },
+    {
+      "id": "D16-READ-TIMEOUT", "workspaceId": "demo-northstar", "principalId": "customer-aylin",
+      "steps": [{"presenterAction": "ARM_FAULT", "fault": "READ_TIMEOUT", "orderId": "NS-1002", "occurrences": 2}, {"message": "Where is order NS-1002?"}],
+      "expected": {"mutationCount": 0, "transientReadRetryCount": 1, "trackingUnavailableAcknowledged": true, "inventedTrackingFacts": false}
+    }
+  ]
+}

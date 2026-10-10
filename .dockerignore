@@ -1,0 +1,9 @@
+.env
+.env.*
+.git
+.idea
+**/node_modules
+**/target
+**/dist
+**/data
+**/.m2
