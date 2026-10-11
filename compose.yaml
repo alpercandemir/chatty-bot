@@ -25,7 +25,7 @@ services:
       AI_MODEL_MAX_ROUNDS: ${AI_MODEL_MAX_ROUNDS:-6}
     ports: [127.0.0.1:8080:8080]
     depends_on:
-      database: {condition: service_healthy}
+      database: { condition: service_healthy }
     healthcheck:
       test: [CMD-SHELL, 'curl -fsS http://localhost:8080/api/v1/health || exit 1']
       interval: 5s
@@ -36,6 +36,6 @@ services:
       context: frontend
     ports: [127.0.0.1:80:80]
     depends_on:
-      backend: {condition: service_healthy}
+      backend: { condition: service_healthy }
 volumes:
   chatty-data:

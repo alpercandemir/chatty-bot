@@ -1,0 +1,16 @@
+# Generated files, local state, and evaluation reports
+node_modules/
+target/
+dist/
+data/
+.runtime/
+.idea/
+.git/
+*.tsbuildinfo
+package-lock.json
+frontend/package-lock.json
+docs/evaluation/
+
+# Documentation and fixture data have their own presentation conventions
+*.md
+demo/

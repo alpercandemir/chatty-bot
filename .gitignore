@@ -6,6 +6,8 @@
 
 # Local build and tooling output
 node_modules/
+.venv/
+__pycache__/
 target/
 dist/
 .DS_Store

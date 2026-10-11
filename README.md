@@ -232,6 +232,21 @@ python3 scripts/evaluate.py --mode live --limit 50 --repetitions 3 --output docs
 
 HTTP evaluations use a separate presenter workspace and reset it between cases. Provider setup and quota failures abort the live batch and are recorded separately rather than counted as passes.
 
+### Code formatting
+
+Code uses four spaces, explicit braces for conditionals and loops, and a 100-column formatter target. YAML retains two-space indentation. EditorConfig applies these indentation settings in supporting editors; Prettier formats Java, frontend code, XML, and shell scripts, and Black formats Python.
+
+Install the formatting tools from the repository root:
+
+```sh
+npm ci
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements-dev.txt
+```
+
+With the virtual environment active, use `npm run format` to format the code or `npm run format:check` to check it without changing files. Generated output, local data, evaluation reports, documentation, and demo fixtures are excluded from automatic formatting.
+
 ## API and project layout
 
 Open the studio first to establish the local presenter cookie, then visit [Swagger UI](http://127.0.0.1:8080/swagger-ui.html). Keep the same hostname as the studio; when using Compose, use `localhost` for both. Customer chat uses server-issued sessions, while presenter controls and internal simulator endpoints require presenter access.

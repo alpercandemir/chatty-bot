@@ -1,0 +1,14 @@
+{
+    "name": "chatty-formatting",
+    "private": true,
+    "scripts": {
+        "format": "prettier --write . && python3 -m black scripts",
+        "format:check": "prettier --check . && python3 -m black --check scripts"
+    },
+    "devDependencies": {
+        "@prettier/plugin-xml": "3.4.2",
+        "prettier": "3.9.10",
+        "prettier-plugin-java": "2.11.0",
+        "prettier-plugin-sh": "0.20.2"
+    }
+}
