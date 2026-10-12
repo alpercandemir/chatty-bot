@@ -1,11 +1,16 @@
 package com.chatty.api;
 
-import static com.chatty.store.Json.*;
+import static com.chatty.store.Json.find;
+import static com.chatty.store.Json.id;
+import static com.chatty.store.Json.obj;
+import static com.chatty.store.Json.str;
 
 import com.chatty.store.WorkspaceStore;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import jakarta.servlet.http.*;
-import java.util.*;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.util.Set;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -13,13 +18,12 @@ import org.springframework.stereotype.Component;
 public class Sessions {
 
     public record Session(
-        String token,
-        String presenter,
-        String workspace,
-        String principal,
-        String role,
-        String generation
-    ) {}
+            String token,
+            String presenter,
+            String workspace,
+            String principal,
+            String role,
+            String generation) {}
 
     private final JdbcTemplate db;
     private final WorkspaceStore store;
@@ -29,25 +33,24 @@ public class Sessions {
         this.store = store;
     }
 
-    private Session cookie(HttpServletRequest req, String name) {
-        if (req.getCookies() != null) {
-            for (Cookie c : req.getCookies()) {
-                if (c.getName().equals(name)) {
-                    var list = db.query(
-                        "SELECT * FROM demo_session WHERE token=?",
-                        (rs, i) ->
-                            new Session(
-                                rs.getString("token"),
-                                rs.getString("presenter_id"),
-                                rs.getString("workspace_id"),
-                                rs.getString("principal_id"),
-                                rs.getString("role"),
-                                rs.getString("generation")
-                            ),
-                        c.getValue()
-                    );
-                    if (!list.isEmpty()) {
-                        return list.getFirst();
+    private Session cookie(HttpServletRequest request, String name) {
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if (cookie.getName().equals(name)) {
+                    var matchingSessions =
+                            db.query(
+                                    "SELECT * FROM demo_session WHERE token=?",
+                                    (rs, i) ->
+                                            new Session(
+                                                    rs.getString("token"),
+                                                    rs.getString("presenter_id"),
+                                                    rs.getString("workspace_id"),
+                                                    rs.getString("principal_id"),
+                                                    rs.getString("role"),
+                                                    rs.getString("generation")),
+                                    cookie.getValue());
+                    if (!matchingSessions.isEmpty()) {
+                        return matchingSessions.getFirst();
                     }
                 }
             }
@@ -55,90 +58,87 @@ public class Sessions {
         return null;
     }
 
-    public Session presenter(HttpServletRequest req) {
-        Session s = cookie(req, "chatty_presenter");
-        if (s == null || !s.role.equals("presenter")) {
+    public Session presenter(HttpServletRequest request) {
+        Session session = cookie(request, "chatty_presenter");
+        if (session == null || !session.role.equals("presenter")) {
             throw new Problem(
-                403,
-                "PRESENTER_REQUIRED",
-                "Open the local demo console to establish a presenter session."
-            );
+                    403,
+                    "PRESENTER_REQUIRED",
+                    "Open the local demo console to establish a presenter session.");
         }
-        return s;
+        return session;
     }
 
-    public Session customer(HttpServletRequest req) {
-        Session s = cookie(req, "chatty_customer");
-        if (s == null) {
+    public Session customer(HttpServletRequest request) {
+        Session session = cookie(request, "chatty_customer");
+        if (session == null) {
             throw new Problem(401, "SESSION_REQUIRED", "Choose a demo customer to continue.");
         }
-        String gen = store.read(s.workspace, x -> str(x, "generation"));
-        if (!gen.equals(s.generation)) {
+        String generation = store.read(session.workspace, state -> str(state, "generation"));
+        if (!generation.equals(session.generation)) {
             throw new Problem(
-                401,
-                "SESSION_RESET",
-                "Demo data was reset. Choose a customer again."
-            );
+                    401, "SESSION_RESET", "Demo data was reset. Choose a customer again.");
         }
-        return s;
+        return session;
     }
 
-    public Session bootstrap(HttpServletRequest req, HttpServletResponse res) {
-        Session old = cookie(req, "chatty_presenter");
-        if (old != null) {
-            return old;
+    public Session bootstrap(HttpServletRequest request, HttpServletResponse response) {
+        Session existingSession = cookie(request, "chatty_presenter");
+        if (existingSession != null) {
+            return existingSession;
         }
-        String token = id("session"),
-            p = id("presenter");
+        String token = id("session");
+        String presenterId = id("presenter");
         db.update(
-            "INSERT INTO demo_session(token,presenter_id,role) VALUES (?,?,?)",
-            token,
-            p,
-            "presenter"
-        );
-        setCookie(res, "chatty_presenter", token);
-        return new Session(token, p, null, null, "presenter", null);
+                "INSERT INTO demo_session(token,presenter_id,role) VALUES (?,?,?)",
+                token,
+                presenterId,
+                "presenter");
+        setCookie(response, "chatty_presenter", token);
+        return new Session(token, presenterId, null, null, "presenter", null);
     }
 
-    public ObjectNode select(Session p, String pack, String principal, HttpServletResponse res) {
+    public ObjectNode select(
+            Session presenterSession, String pack, String principal, HttpServletResponse response) {
         if (!Set.of("commerce", "cleaning").contains(pack)) {
             throw new Problem(422, "VALIDATION_FAILED", "Unknown pack.");
         }
-        String w = p.presenter + ":" + pack;
-        store.ensure(w, pack);
-        String gen = store.read(w, s -> {
-            if (find(s.path("principals"), principal) == null) {
-                throw Problem.missing();
-            }
-            return str(s, "generation");
-        });
+        String workspaceId = presenterSession.presenter + ":" + pack;
+        store.ensure(workspaceId, pack);
+        String generation =
+                store.read(
+                        workspaceId,
+                        state -> {
+                            if (find(state.path("principals"), principal) == null) {
+                                throw Problem.missing();
+                            }
+                            return str(state, "generation");
+                        });
         String token = id("session");
         db.update(
-            "INSERT INTO demo_session(token,presenter_id,workspace_id,principal_id,role,generation) VALUES (?,?,?,?,?,?)",
-            token,
-            p.presenter,
-            w,
-            principal,
-            "customer",
-            gen
-        );
-        setCookie(res, "chatty_customer", token);
-        return obj("workspaceId", w, "principalId", principal, "pack", pack);
+                "INSERT INTO demo_session(token,presenter_id,workspace_id,principal_id,role,generation) VALUES (?,?,?,?,?,?)",
+                token,
+                presenterSession.presenter,
+                workspaceId,
+                principal,
+                "customer",
+                generation);
+        setCookie(response, "chatty_customer", token);
+        return obj("workspaceId", workspaceId, "principalId", principal, "pack", pack);
     }
 
-    public String workspace(Session p, String pack) {
+    public String workspace(Session presenterSession, String pack) {
         if (!Set.of("commerce", "cleaning").contains(pack)) {
             throw Problem.missing();
         }
-        String w = p.presenter + ":" + pack;
-        store.ensure(w, pack);
-        return w;
+        String workspaceId = presenterSession.presenter + ":" + pack;
+        store.ensure(workspaceId, pack);
+        return workspaceId;
     }
 
-    private void setCookie(HttpServletResponse res, String name, String value) {
-        res.addHeader(
-            "Set-Cookie",
-            name + "=" + value + "; HttpOnly; SameSite=Strict; Path=/; Max-Age=86400"
-        );
+    private void setCookie(HttpServletResponse response, String name, String value) {
+        response.addHeader(
+                "Set-Cookie",
+                name + "=" + value + "; HttpOnly; SameSite=Strict; Path=/; Max-Age=86400");
     }
 }

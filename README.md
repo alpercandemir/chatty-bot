@@ -190,7 +190,7 @@ Observed locally on **10 October 2026**:
 
 | Check | Result |
 | --- | --- |
-| Backend acceptance and safety suite | **27 tests passed**, including all 16 supplied journeys |
+| Backend acceptance and safety suite | **28 tests passed**, including all 16 supplied journeys and provider-failure recovery |
 | Public-HTTP scripted evaluation | **50 / 50 passed** |
 | Java package and frontend production bundle | Built successfully |
 | Real Gemini tracking | Completed with 2 model requests and 2 tool calls |
@@ -234,7 +234,7 @@ HTTP evaluations use a separate presenter workspace and reset it between cases. 
 
 ### Code formatting
 
-Code uses four spaces, explicit braces for conditionals and loops, and a 100-column formatter target. YAML retains two-space indentation. EditorConfig applies these indentation settings in supporting editors; Prettier formats Java, frontend code, XML, and shell scripts, and Black formats Python.
+Code uses four spaces and explicit braces for conditionals and loops. Java uses Spotless with google-java-format's AOSP style, which distinguishes four-space block indentation from continuation indentation. Checkstyle rejects wildcard imports, missing braces, multiple declarations in one statement, and multiple statements on one line. YAML retains two-space indentation. Prettier formats frontend code, XML, and shell scripts with a 100-column target, and Black formats Python. See [Java conventions](docs/JAVA_STYLE.md) for the refactoring rules and their sources.
 
 Install the formatting tools from the repository root:
 
@@ -245,7 +245,7 @@ source .venv/bin/activate
 python3 -m pip install -r requirements-dev.txt
 ```
 
-With the virtual environment active, use `npm run format` to format the code or `npm run format:check` to check it without changing files. Generated output, local data, evaluation reports, documentation, and demo fixtures are excluded from automatic formatting.
+With Java 21 selected and the virtual environment active, use `npm run format` to format the code or `npm run format:check` to check it without changing files. `mvn -f backend/pom.xml verify` runs Java style checks, tests, and formatting validation. Generated output, local data, evaluation reports, documentation, and demo fixtures are excluded from automatic formatting.
 
 ## API and project layout
 

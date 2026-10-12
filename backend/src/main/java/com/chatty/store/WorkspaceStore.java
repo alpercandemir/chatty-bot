@@ -1,10 +1,16 @@
 package com.chatty.store;
 
-import static com.chatty.store.Json.*;
+import static com.chatty.store.Json.M;
+import static com.chatty.store.Json.find;
+import static com.chatty.store.Json.id;
+import static com.chatty.store.Json.obj;
+import static com.chatty.store.Json.parse;
+import static com.chatty.store.Json.str;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
-import java.time.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.time.Instant;
 import java.util.function.Function;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -16,7 +22,8 @@ public class WorkspaceStore {
 
     private final JdbcTemplate jdbc;
     private final TransactionTemplate tx;
-    public final JsonNode seed, scenarios;
+    public final JsonNode seed;
+    public final JsonNode scenarios;
 
     public WorkspaceStore(JdbcTemplate jdbc, TransactionTemplate tx) throws Exception {
         this.jdbc = jdbc;
@@ -27,204 +34,204 @@ public class WorkspaceStore {
 
     public ObjectNode fresh(String pack) {
         String base = pack.equals("commerce") ? "demo-northstar" : "demo-clearspace";
-        ObjectNode s = obj(
-            "pack",
-            pack,
-            "generation",
-            id("reset"),
-            "resetAt",
-            Instant.now().toString(),
-            "fixtureVersion",
-            "1.0.0"
-        );
-        for (String name : new String[] {
-            "orders",
-            "shipments",
-            "knowledgeArticles",
-            "principals",
-        }) {
-            ArrayNode a = s.putArray(name);
-            for (JsonNode n : seed.path(name)) {
-                if (n.path("workspaceId").asText().equals(base)) {
-                    a.add(n.deepCopy());
+        ObjectNode state =
+                obj(
+                        "pack",
+                        pack,
+                        "generation",
+                        id("reset"),
+                        "resetAt",
+                        Instant.now().toString(),
+                        "fixtureVersion",
+                        "1.0.0");
+        copyWorkspaceFixtures(state, base);
+        initializeOrders(state);
+        initializeShipments(state);
+        for (String collectionName :
+                new String[] {
+                    "conversations",
+                    "runs",
+                    "actions",
+                    "operations",
+                    "supportTickets",
+                    "callbackRequests",
+                    "faults",
+                }) {
+            state.putArray(collectionName);
+        }
+        return state;
+    }
+
+    private void copyWorkspaceFixtures(ObjectNode state, String fixtureWorkspaceId) {
+        for (String collectionName :
+                new String[] {
+                    "orders", "shipments", "knowledgeArticles", "principals",
+                }) {
+            ArrayNode records = state.putArray(collectionName);
+            for (JsonNode record : seed.path(collectionName)) {
+                if (record.path("workspaceId").asText().equals(fixtureWorkspaceId)) {
+                    records.add(record.deepCopy());
                 }
             }
         }
-        for (JsonNode n : s.path("orders")) {
-            ObjectNode o = (ObjectNode) n;
-            JsonNode addr = find(seed.path("addresses"), str(o, "addressId"));
-            ObjectNode a = (ObjectNode) addr.deepCopy();
-            a.remove(java.util.List.of("id", "workspaceId", "principalId"));
-            o.set("deliveryAddress", a);
-            o.put(
-                "placedAt",
-                Instant.now()
-                    .plusSeconds(o.path("placedAtOffsetMinutes").asLong() * 60)
-                    .toString()
-            );
+    }
+
+    private void initializeOrders(ObjectNode state) {
+        for (JsonNode record : state.path("orders")) {
+            ObjectNode order = (ObjectNode) record;
+            JsonNode address = find(seed.path("addresses"), str(order, "addressId"));
+            ObjectNode deliveryAddress = (ObjectNode) address.deepCopy();
+            deliveryAddress.remove(java.util.List.of("id", "workspaceId", "principalId"));
+            order.set("deliveryAddress", deliveryAddress);
+            order.put(
+                    "placedAt",
+                    Instant.now()
+                            .plusSeconds(order.path("placedAtOffsetMinutes").asLong() * 60)
+                            .toString());
         }
-        for (JsonNode n : s.path("shipments")) {
-            ObjectNode sh = (ObjectNode) n;
-            JsonNode offset = sh.get("estimatedDeliveryOffsetMinutes");
+    }
+
+    private void initializeShipments(ObjectNode state) {
+        for (JsonNode record : state.path("shipments")) {
+            ObjectNode shipment = (ObjectNode) record;
+            JsonNode offset = shipment.get("estimatedDeliveryOffsetMinutes");
             if (offset == null || offset.isNull()) {
-                sh.putNull("estimatedDeliveryAt");
+                shipment.putNull("estimatedDeliveryAt");
             } else {
-                sh.put(
-                    "estimatedDeliveryAt",
-                    Instant.now()
-                        .plusSeconds(offset.asLong() * 60)
-                        .toString()
-                );
+                shipment.put(
+                        "estimatedDeliveryAt",
+                        Instant.now().plusSeconds(offset.asLong() * 60).toString());
             }
-            for (JsonNode ev : sh.path("events")) {
-                ((ObjectNode) ev).put(
-                    "occurredAt",
-                    Instant.now()
-                        .plusSeconds(ev.path("occurredAtOffsetMinutes").asLong() * 60)
-                        .toString()
-                );
+            for (JsonNode event : shipment.path("events")) {
+                ((ObjectNode) event)
+                        .put(
+                                "occurredAt",
+                                Instant.now()
+                                        .plusSeconds(
+                                                event.path("occurredAtOffsetMinutes").asLong() * 60)
+                                        .toString());
             }
         }
-        for (String k : new String[] {
-            "conversations",
-            "runs",
-            "actions",
-            "operations",
-            "supportTickets",
-            "callbackRequests",
-            "faults",
-        }) {
-            s.putArray(k);
-        }
-        return s;
     }
 
     public synchronized void ensure(String workspace, String pack) {
-        tx.executeWithoutResult(t -> {
-            if (
-                jdbc.queryForObject(
-                    "SELECT COUNT(*) FROM demo_workspace WHERE id=?",
-                    Integer.class,
-                    workspace
-                ) == 0
-            ) {
-                ObjectNode initial = fresh(pack);
-                initial.put("workspaceId", workspace);
-                jdbc.update(
-                    "INSERT INTO demo_workspace(id,document) VALUES (?,?)",
-                    workspace,
-                    initial.toString()
-                );
-                syncKnowledge(workspace, initial);
-            }
-        });
+        tx.executeWithoutResult(
+                t -> {
+                    if (jdbc.queryForObject(
+                                    "SELECT COUNT(*) FROM demo_workspace WHERE id=?",
+                                    Integer.class,
+                                    workspace)
+                            == 0) {
+                        ObjectNode initial = fresh(pack);
+                        initial.put("workspaceId", workspace);
+                        jdbc.update(
+                                "INSERT INTO demo_workspace(id,document) VALUES (?,?)",
+                                workspace,
+                                initial.toString());
+                        syncKnowledge(workspace, initial);
+                    }
+                });
     }
 
-    public void syncKnowledge(String workspace, ObjectNode s) {
+    public void syncKnowledge(String workspace, ObjectNode state) {
         jdbc.update("DELETE FROM knowledge_article WHERE workspace_id=?", workspace);
-        for (JsonNode a : s.path("knowledgeArticles")) {
+        for (JsonNode a : state.path("knowledgeArticles")) {
             jdbc.update(
-                "INSERT INTO knowledge_article(workspace_id,article_id,version,title,content) VALUES (?,?,?,?,?)",
-                workspace,
-                str(a, "id"),
-                a.path("version").asInt(),
-                str(a, "title"),
-                str(a, "content")
-            );
+                    "INSERT INTO knowledge_article(workspace_id,article_id,version,title,content) VALUES (?,?,?,?,?)",
+                    workspace,
+                    str(a, "id"),
+                    a.path("version").asInt(),
+                    str(a, "title"),
+                    str(a, "content"));
         }
     }
 
-    public <T> T read(String id, Function<ObjectNode, T> f) {
-        return f.apply(load(id, false));
+    public <T> T read(String id, Function<ObjectNode, T> operation) {
+        return operation.apply(load(id, false));
     }
 
-    public <T> T change(String id, Function<ObjectNode, T> f) {
-        return tx.execute(t -> {
-            ObjectNode s = load(id, true);
-            T out = f.apply(s);
-            jdbc.update(
-                "UPDATE demo_workspace SET document=?,revision=revision+1 WHERE id=?",
-                s.toString(),
-                id
-            );
-            return out;
-        });
+    public <T> T change(String id, Function<ObjectNode, T> operation) {
+        return tx.execute(
+                t -> {
+                    ObjectNode state = load(id, true);
+                    T result = operation.apply(state);
+                    jdbc.update(
+                            "UPDATE demo_workspace SET document=?,revision=revision+1 WHERE id=?",
+                            state.toString(),
+                            id);
+                    return result;
+                });
     }
 
     private ObjectNode load(String id, boolean lock) {
-        return (ObjectNode) parse(
-            jdbc.queryForObject(
-                "SELECT document FROM demo_workspace WHERE id=?" + (lock ? " FOR UPDATE" : ""),
-                String.class,
-                id
-            )
-        );
+        return (ObjectNode)
+                parse(
+                        jdbc.queryForObject(
+                                "SELECT document FROM demo_workspace WHERE id=?"
+                                        + (lock ? " FOR UPDATE" : ""),
+                                String.class,
+                                id));
     }
 
     public void purge(String workspace) {
-        tx.executeWithoutResult(t -> {
-            ObjectNode s = load(workspace, true);
-            for (JsonNode a : s.path("actions")) {
-                if (java.util.Set.of("UNKNOWN", "EXECUTING").contains(str(a, "status"))) {
-                    throw new com.chatty.api.Problem(
-                        409,
-                        "PURGE_BLOCKED",
-                        "Reconcile pending operations first."
-                    );
-                }
-            }
-            for (JsonNode r : s.path("runs")) {
-                if (java.util.Set.of("QUEUED", "RUNNING").contains(str(r, "status"))) {
-                    throw new com.chatty.api.Problem(
-                        409,
-                        "PURGE_BLOCKED",
-                        "Stop active runs first."
-                    );
-                }
-            }
-            jdbc.update("DELETE FROM knowledge_article WHERE workspace_id=?", workspace);
-            jdbc.update("DELETE FROM demo_session WHERE workspace_id=?", workspace);
-            jdbc.update("DELETE FROM demo_workspace WHERE id=?", workspace);
-        });
+        tx.executeWithoutResult(
+                t -> {
+                    ObjectNode state = load(workspace, true);
+                    for (JsonNode a : state.path("actions")) {
+                        if (java.util.Set.of("UNKNOWN", "EXECUTING").contains(str(a, "status"))) {
+                            throw new com.chatty.api.Problem(
+                                    409, "PURGE_BLOCKED", "Reconcile pending operations first.");
+                        }
+                    }
+                    for (JsonNode run : state.path("runs")) {
+                        if (java.util.Set.of("QUEUED", "RUNNING").contains(str(run, "status"))) {
+                            throw new com.chatty.api.Problem(
+                                    409, "PURGE_BLOCKED", "Stop active runs first.");
+                        }
+                    }
+                    jdbc.update("DELETE FROM knowledge_article WHERE workspace_id=?", workspace);
+                    jdbc.update("DELETE FROM demo_session WHERE workspace_id=?", workspace);
+                    jdbc.update("DELETE FROM demo_workspace WHERE id=?", workspace);
+                });
     }
 
     public void recover() {
         for (String w : jdbc.queryForList("SELECT id FROM demo_workspace", String.class)) {
-            change(w, s -> {
-                for (JsonNode n : s.path("runs")) {
-                    ObjectNode r = (ObjectNode) n;
-                    if (java.util.Set.of("QUEUED", "RUNNING").contains(str(r, "status"))) {
-                        r.put("status", "FAILED");
-                        event(
-                            r,
-                            "recovery",
-                            "Interrupted run recovered. Send a new message to retry.",
-                            obj("code", "PROCESS_RESTART")
-                        );
-                    }
-                }
-                return null;
-            });
+            change(
+                    w,
+                    state -> {
+                        for (JsonNode n : state.path("runs")) {
+                            ObjectNode run = (ObjectNode) n;
+                            if (java.util.Set.of("QUEUED", "RUNNING")
+                                    .contains(str(run, "status"))) {
+                                run.put("status", "FAILED");
+                                event(
+                                        run,
+                                        "recovery",
+                                        "Interrupted run recovered. Send a new message to retry.",
+                                        obj("code", "PROCESS_RESTART"));
+                            }
+                        }
+                        return null;
+                    });
         }
     }
 
-    public static void event(ObjectNode r, String type, String title, JsonNode detail) {
-        ArrayNode events = (ArrayNode) r.withArray("events");
+    public static void event(ObjectNode run, String type, String title, JsonNode detail) {
+        ArrayNode events = (ArrayNode) run.withArray("events");
         events.add(
-            obj(
-                "id",
-                events.size() + 1,
-                "runId",
-                str(r, "id"),
-                "type",
-                type,
-                "title",
-                title,
-                "at",
-                Instant.now().toString(),
-                "detail",
-                detail
-            )
-        );
+                obj(
+                        "id",
+                        events.size() + 1,
+                        "runId",
+                        str(run, "id"),
+                        "type",
+                        type,
+                        "title",
+                        title,
+                        "at",
+                        Instant.now().toString(),
+                        "detail",
+                        detail));
     }
 }

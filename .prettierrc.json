@@ -3,14 +3,8 @@
     "useTabs": false,
     "printWidth": 100,
     "singleQuote": true,
-    "plugins": ["prettier-plugin-java", "prettier-plugin-sh", "@prettier/plugin-xml"],
+    "plugins": ["prettier-plugin-sh", "@prettier/plugin-xml"],
     "overrides": [
-        {
-            "files": "*.java",
-            "options": {
-                "singleQuote": false
-            }
-        },
         {
             "files": ["*.yml", "*.yaml"],
             "options": {

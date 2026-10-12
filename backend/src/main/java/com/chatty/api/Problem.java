@@ -13,9 +13,8 @@ public class Problem extends RuntimeException {
 
     public static Problem missing() {
         return new Problem(
-            404,
-            "RESOURCE_NOT_AVAILABLE",
-            "This resource is not available. Check the reference or request support."
-        );
+                404,
+                "RESOURCE_NOT_AVAILABLE",
+                "This resource is not available. Check the reference or request support.");
     }
 }

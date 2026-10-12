@@ -1,11 +1,11 @@
 package com.chatty.scenario;
 
-import static com.chatty.store.Json.*;
+import static com.chatty.store.Json.obj;
 
 import com.chatty.api.Problem;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.*;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public final class Schemas {
 
@@ -13,15 +13,14 @@ public final class Schemas {
 
     public static JsonNode object(Map<String, JsonNode> properties, String... required) {
         return obj(
-            "type",
-            "object",
-            "properties",
-            properties,
-            "required",
-            required,
-            "additionalProperties",
-            false
-        );
+                "type",
+                "object",
+                "properties",
+                properties,
+                "required",
+                required,
+                "additionalProperties",
+                false);
     }
 
     public static JsonNode string() {
@@ -29,38 +28,42 @@ public final class Schemas {
     }
 
     public static JsonNode fields(String... keys) {
-        Map<String, JsonNode> p = new LinkedHashMap<>();
-        for (String k : keys) {
-            p.put(k, string());
+        Map<String, JsonNode> properties = new LinkedHashMap<>();
+        for (String fieldName : keys) {
+            properties.put(fieldName, string());
         }
-        return object(p, keys);
+        return object(properties, keys);
     }
 
     public static void validate(JsonNode args, JsonNode schema) {
         if (!args.isObject()) {
             throw invalid();
         }
-        for (JsonNode r : schema.path("required")) {
-            if (!args.hasNonNull(r.asText())) {
+        for (JsonNode requiredField : schema.path("required")) {
+            if (!args.hasNonNull(requiredField.asText())) {
                 throw invalid();
             }
         }
-        args.fieldNames().forEachRemaining(k -> {
-            JsonNode p = schema.path("properties").get(k);
-            if (p == null) {
-                throw invalid();
-            }
-            JsonNode v = args.get(k);
-            switch (p.path("type").asText()) {
-                case "string" -> {
-                    if (!v.isTextual() || v.asText().isBlank() || v.asText().length() > 3000) {
-                        throw invalid();
-                    }
-                }
-                case "object" -> validate(v, p);
-                default -> throw invalid();
-            }
-        });
+        args.fieldNames()
+                .forEachRemaining(
+                        fieldName -> {
+                            JsonNode propertySchema = schema.path("properties").get(fieldName);
+                            if (propertySchema == null) {
+                                throw invalid();
+                            }
+                            JsonNode propertyValue = args.get(fieldName);
+                            switch (propertySchema.path("type").asText()) {
+                                case "string" -> {
+                                    if (!propertyValue.isTextual()
+                                            || propertyValue.asText().isBlank()
+                                            || propertyValue.asText().length() > 3000) {
+                                        throw invalid();
+                                    }
+                                }
+                                case "object" -> validate(propertyValue, propertySchema);
+                                default -> throw invalid();
+                            }
+                        });
     }
 
     private static Problem invalid() {

@@ -14,3 +14,6 @@ docs/evaluation/
 # Documentation and fixture data have their own presentation conventions
 *.md
 demo/
+
+# Java is formatted by Spotless with google-java-format's four-space AOSP style
+*.java
