@@ -106,45 +106,45 @@ public class Actions {
             action.put("code", "SIMULATED_WRITE_FAILED");
             action.put(
                     "error", "The simulated system failed before committing. No change was made.");
-        } else {
-            try {
-                // Domain validation and mutation happen under the same database row
-                // lock.
-                JsonNode result = packs.get(str(context.state(), "pack")).execute(action, context);
-                action.put("status", "EXECUTING");
+            return;
+        }
+        try {
+            // Domain validation and mutation happen under the same database row
+            // lock.
+            JsonNode result = packs.get(str(context.state(), "pack")).execute(action, context);
+            action.put("status", "EXECUTING");
+            event(
+                    context.run(),
+                    "execute",
+                    "Recorded action dispatched",
+                    obj("operationId", str(action, "operationId")));
+            action.set("result", result);
+            context.state()
+                    .withArray("operations")
+                    .add(
+                            obj(
+                                    "id",
+                                    str(action, "operationId"),
+                                    "actionId",
+                                    actionId,
+                                    "status",
+                                    "SUCCEEDED",
+                                    "result",
+                                    result));
+            if (context.fault("WRITE_TIMEOUT_AFTER_COMMIT", resource)) {
+                action.put("status", "UNKNOWN");
                 event(
                         context.run(),
-                        "execute",
-                        "Recorded action dispatched",
-                        obj("operationId", str(action, "operationId")));
-                action.set("result", result);
-                context.state()
-                        .withArray("operations")
-                        .add(
-                                obj(
-                                        "id",
-                                        str(action, "operationId"),
-                                        "actionId",
-                                        actionId,
-                                        "status",
-                                        "SUCCEEDED",
-                                        "result",
-                                        result));
-                if (context.fault("WRITE_TIMEOUT_AFTER_COMMIT", resource)) {
-                    action.put("status", "UNKNOWN");
-                    event(
-                            context.run(),
-                            "verify",
-                            "Response lost after dispatch; outcome pending verification",
-                            obj("status", "UNKNOWN", "operationId", str(action, "operationId")));
-                } else {
-                    action.put("status", "SUCCEEDED");
-                }
-            } catch (Problem problem) {
-                action.put("status", "REJECTED");
-                action.put("code", problem.code);
-                action.put("error", problem.getMessage());
+                        "verify",
+                        "Response lost after dispatch; outcome pending verification",
+                        obj("status", "UNKNOWN", "operationId", str(action, "operationId")));
+            } else {
+                action.put("status", "SUCCEEDED");
             }
+        } catch (Problem problem) {
+            action.put("status", "REJECTED");
+            action.put("code", problem.code);
+            action.put("error", problem.getMessage());
         }
     }
 

@@ -100,12 +100,15 @@ public class CommercePack implements ScenarioPack {
                 normalizedText.contains("address")
                         || normalizedText.startsWith("send order")
                         || str(conversation, "task").equals("address");
-        if (str(conversation, "task").equals("address")
-                && normalizedText.contains("city")
-                && (normalizedText.contains("?")
+        boolean awaitingAddress = str(conversation, "task").equals("address");
+        boolean asksAboutRequiredFields =
+                normalizedText.contains("?")
                         || normalizedText.contains("need")
                         || normalizedText.contains("specify")
-                        || normalizedText.contains("why"))) {
+                        || normalizedText.contains("why");
+        boolean asksWhyCityIsRequired =
+                awaitingAddress && normalizedText.contains("city") && asksAboutRequiredFields;
+        if (asksWhyCityIsRequired) {
             return Decision.say(
                     "Yes, the city is required to identify the delivery destination. Please include it with the district and postal code; I won't assume it is the same as the current address. What city should the new address use?",
                     true);
@@ -157,11 +160,7 @@ public class CommercePack implements ScenarioPack {
             return Decision.call(
                     "prepare_address_change", obj("orderId", orderId, "address", address));
         }
-        if (normalizedText.contains("where")
-                || normalizedText.contains("arrive")
-                || normalizedText.contains("track")
-                || normalizedText.contains("show me order")
-                || normalizedText.matches(".*ns-\\d+.*")) {
+        if (requestsShipmentTracking(normalizedText)) {
             if (orderId.isBlank()) {
                 return Decision.call("list_orders", obj());
             }
@@ -170,6 +169,15 @@ public class CommercePack implements ScenarioPack {
             return Decision.call("get_order", obj("orderId", orderId));
         }
         return Decision.call("search_knowledge", obj("query", text));
+    }
+
+    private boolean requestsShipmentTracking(String normalizedText) {
+        for (String phrase : List.of("where", "arrive", "track", "show me order")) {
+            if (normalizedText.contains(phrase)) {
+                return true;
+            }
+        }
+        return normalizedText.matches(".*ns-\\d+.*");
     }
 
     private ObjectNode parseAddress(String text) {

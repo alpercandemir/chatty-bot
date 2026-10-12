@@ -8,5 +8,26 @@
         <module name="NeedBraces" />
         <module name="MultipleVariableDeclarations" />
         <module name="OneStatementPerLine" />
+        <module name="MethodLength">
+            <property name="max" value="50" />
+            <property name="countEmpty" value="false" />
+            <property name="severity" value="warning" />
+        </module>
+        <module name="BooleanExpressionComplexity">
+            <property name="max" value="3" />
+            <property name="severity" value="warning" />
+        </module>
+        <module name="NestedIfDepth">
+            <property name="max" value="1" />
+            <property name="severity" value="warning" />
+        </module>
+        <module name="NestedForDepth">
+            <property name="max" value="1" />
+            <property name="severity" value="warning" />
+        </module>
+        <module name="NestedTryDepth">
+            <property name="max" value="1" />
+            <property name="severity" value="warning" />
+        </module>
     </module>
 </module>

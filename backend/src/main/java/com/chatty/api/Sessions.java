@@ -34,25 +34,28 @@ public class Sessions {
     }
 
     private Session cookie(HttpServletRequest request, String name) {
-        if (request.getCookies() != null) {
-            for (Cookie cookie : request.getCookies()) {
-                if (cookie.getName().equals(name)) {
-                    var matchingSessions =
-                            db.query(
-                                    "SELECT * FROM demo_session WHERE token=?",
-                                    (rs, i) ->
-                                            new Session(
-                                                    rs.getString("token"),
-                                                    rs.getString("presenter_id"),
-                                                    rs.getString("workspace_id"),
-                                                    rs.getString("principal_id"),
-                                                    rs.getString("role"),
-                                                    rs.getString("generation")),
-                                    cookie.getValue());
-                    if (!matchingSessions.isEmpty()) {
-                        return matchingSessions.getFirst();
-                    }
-                }
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            return null;
+        }
+        for (Cookie cookie : cookies) {
+            if (!cookie.getName().equals(name)) {
+                continue;
+            }
+            var matchingSessions =
+                    db.query(
+                            "SELECT * FROM demo_session WHERE token=?",
+                            (result, rowNumber) ->
+                                    new Session(
+                                            result.getString("token"),
+                                            result.getString("presenter_id"),
+                                            result.getString("workspace_id"),
+                                            result.getString("principal_id"),
+                                            result.getString("role"),
+                                            result.getString("generation")),
+                            cookie.getValue());
+            if (!matchingSessions.isEmpty()) {
+                return matchingSessions.getFirst();
             }
         }
         return null;

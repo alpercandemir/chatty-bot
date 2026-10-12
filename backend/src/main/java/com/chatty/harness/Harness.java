@@ -242,7 +242,7 @@ public class Harness {
                             return publicRun(run);
                         });
         if (str(accepted, "status").equals("QUEUED")) {
-            workers.submit(() -> process(session, conversationId, str(accepted, "id")));
+            workers.submit(() -> executeRun(session, conversationId, str(accepted, "id")));
         }
         return accepted;
     }
@@ -291,7 +291,7 @@ public class Harness {
             boolean live,
             long startedNanos) {}
 
-    private void process(Sessions.Session session, String conversationId, String runId) {
+    private void executeRun(Sessions.Session session, String conversationId, String runId) {
         boolean acquired = false;
         long start = 0;
         try {
@@ -412,78 +412,78 @@ public class Harness {
 
     private Decision nextDecision(
             ProcessingContext processing, ScenarioPack pack, ObjectNode snapshot, ObjectNode run) {
-        Decision decision;
-        if (processing.live()) {
-            if (run.withArray("pendingCalls").isEmpty()
-                    && run.path("modelRequests").asInt() >= rounds) {
-                throw new Problem(
-                        429,
-                        "MODEL_ROUND_LIMIT",
-                        "The model-round limit was reached. Please narrow your request.");
-            }
-            boolean modelRequest = run.withArray("pendingCalls").isEmpty();
-            store.change(
+        if (!processing.live()) {
+            return store.change(
                     processing.session().workspace(),
-                    state -> {
-                        ObjectNode current = find(state.path("runs"), processing.runId());
-                        if (modelRequest) {
-                            current.put("modelRequests", current.path("modelRequests").asInt() + 1);
-                            event(
-                                    current,
-                                    "model",
-                                    "Gemini selecting the next permitted step",
-                                    obj("model", gemini.model));
-                        }
-                        return null;
-                    });
-            try {
-                decision = gemini.next(pack, (ObjectNode) snapshot.get("conversation"), run);
-            } catch (Problem problem) {
-                store.change(
-                        processing.session().workspace(),
-                        state -> {
-                            if (run.has("providerError")) {
-                                find(state.path("runs"), processing.runId())
-                                        .set("providerError", run.get("providerError"));
-                            }
-                            if (run.has("providerCauseType")) {
-                                find(state.path("runs"), processing.runId())
-                                        .set("providerCauseType", run.get("providerCauseType"));
-                            }
-                            return null;
-                        });
-                throw problem;
-            }
-            store.change(
-                    processing.session().workspace(),
-                    state -> {
-                        ObjectNode current = find(state.path("runs"), processing.runId());
-                        for (String k :
-                                List.of(
-                                        "providerContents",
-                                        "providerCall",
-                                        "pendingCalls",
-                                        "usage",
-                                        "providerUsage",
-                                        "providerError")) {
-                            if (run.has(k)) {
-                                current.set(k, run.get(k));
-                            }
-                        }
-                        return null;
-                    });
-        } else {
-            decision =
-                    store.change(
-                            processing.session().workspace(),
-                            state ->
-                                    pack.rehearse(
-                                            find(
-                                                    state.path("conversations"),
-                                                    processing.conversationId()),
-                                            find(state.path("runs"), processing.runId())));
+                    state ->
+                            pack.rehearse(
+                                    find(state.path("conversations"), processing.conversationId()),
+                                    find(state.path("runs"), processing.runId())));
         }
+        return nextLiveDecision(processing, pack, (ObjectNode) snapshot.get("conversation"), run);
+    }
+
+    private Decision nextLiveDecision(
+            ProcessingContext processing,
+            ScenarioPack pack,
+            ObjectNode conversation,
+            ObjectNode run) {
+        Decision decision;
+        if (run.withArray("pendingCalls").isEmpty()
+                && run.path("modelRequests").asInt() >= rounds) {
+            throw new Problem(
+                    429,
+                    "MODEL_ROUND_LIMIT",
+                    "The model-round limit was reached. Please narrow your request.");
+        }
+        boolean modelRequest = run.withArray("pendingCalls").isEmpty();
+        store.change(
+                processing.session().workspace(),
+                state -> {
+                    ObjectNode current = find(state.path("runs"), processing.runId());
+                    if (modelRequest) {
+                        current.put("modelRequests", current.path("modelRequests").asInt() + 1);
+                        event(
+                                current,
+                                "model",
+                                "Gemini selecting the next permitted step",
+                                obj("model", gemini.model));
+                    }
+                    return null;
+                });
+        try {
+            decision = gemini.next(pack, conversation, run);
+        } catch (Problem problem) {
+            persistProviderCheckpoint(
+                    processing, run, List.of("providerError", "providerCauseType"));
+            throw problem;
+        }
+        persistProviderCheckpoint(
+                processing,
+                run,
+                List.of(
+                        "providerContents",
+                        "providerCall",
+                        "pendingCalls",
+                        "usage",
+                        "providerUsage",
+                        "providerError"));
         return decision;
+    }
+
+    private void persistProviderCheckpoint(
+            ProcessingContext processing, ObjectNode providerRun, List<String> fields) {
+        store.change(
+                processing.session().workspace(),
+                state -> {
+                    ObjectNode currentRun = find(state.path("runs"), processing.runId());
+                    for (String field : fields) {
+                        if (providerRun.has(field)) {
+                            currentRun.set(field, providerRun.get(field));
+                        }
+                    }
+                    return null;
+                });
     }
 
     private void completeReply(ProcessingContext processing, Decision decision) {
@@ -507,105 +507,97 @@ public class Harness {
 
     private JsonNode executeToolWithRetry(
             ProcessingContext processing, ScenarioPack pack, Decision decision) {
-        JsonNode result = null;
-        for (int attempt = 0; attempt < MAX_TOOL_ATTEMPTS; attempt++) {
-            final int index = attempt;
+        JsonNode result;
+        int attempt = 0;
+        do {
+            int attemptIndex = attempt;
             result =
                     store.change(
                             processing.session().workspace(),
                             state -> {
-                                ObjectNode current = find(state.path("runs"), processing.runId());
+                                ObjectNode run = find(state.path("runs"), processing.runId());
                                 ObjectNode conversation =
                                         find(
                                                 state.path("conversations"),
                                                 processing.conversationId());
-                                if (!str(current, "status").equals("RUNNING")) {
-                                    return obj("stopped", true);
-                                }
-                                int count = current.path("toolCalls").asInt();
-                                if (count >= MAX_TOOL_CALLS) {
-                                    return obj(
-                                            "error",
-                                            obj("code", "TOOL_LIMIT"),
-                                            "message",
-                                            "Tool-call limit reached.");
-                                }
-                                current.put("toolCalls", count + 1);
-                                event(
-                                        current,
-                                        "tool",
-                                        index == 0
-                                                ? "Calling " + decision.tool()
-                                                : "Retrying read once",
-                                        obj(
-                                                "tool",
-                                                decision.tool(),
-                                                "args",
-                                                redact(decision.args()),
-                                                "attempt",
-                                                index + 1));
-                                try {
-                                    JsonNode schema = pack.schemas().get(decision.tool());
-                                    if (schema == null) {
-                                        throw new Problem(
-                                                422,
-                                                "TOOL_NOT_ALLOWED",
-                                                "This tool is not allowed for the active pack.");
-                                    }
-                                    Schemas.validate(decision.args(), schema);
-                                    JsonNode toolResult =
-                                            pack.invoke(
-                                                    decision.tool(),
-                                                    decision.args(),
-                                                    new ToolContext(
-                                                            state,
-                                                            conversation,
-                                                            current,
-                                                            processing.session().principal()));
-                                    if (!toolResult.isObject()
-                                            || !toolResult.path("message").isTextual()) {
-                                        throw new Problem(
-                                                502,
-                                                "TOOL_RESULT_INVALID",
-                                                "The adapter returned an invalid result; no completion is confirmed.");
-                                    }
-                                    event(
-                                            current,
-                                            "evidence",
-                                            "Tool result recorded",
-                                            obj(
-                                                    "tool",
-                                                    decision.tool(),
-                                                    "result",
-                                                    redact(toolResult)));
-                                    return toolResult.deepCopy();
-                                } catch (Problem e) {
-                                    event(
-                                            current,
-                                            e.code.equals("RESOURCE_NOT_AVAILABLE")
-                                                    ? "policy"
-                                                    : "error",
-                                            e.getMessage(),
-                                            obj(
-                                                    "tool",
-                                                    decision.tool(),
-                                                    "code",
-                                                    e.code,
-                                                    "retryable",
-                                                    e.status == 503));
-                                    return obj(
-                                            "error",
-                                            obj("code", e.code, "retryable", e.status == 503),
-                                            "message",
-                                            e.getMessage());
-                                }
+                                ToolContext context =
+                                        new ToolContext(
+                                                state,
+                                                conversation,
+                                                run,
+                                                processing.session().principal());
+                                return executeToolAttempt(pack, decision, context, attemptIndex);
                             });
-            if (!result.path("error").path("retryable").asBoolean()
-                    || attempt == MAX_TOOL_ATTEMPTS - 1) {
-                break;
-            }
-        }
+            attempt++;
+        } while (attempt < MAX_TOOL_ATTEMPTS && result.path("error").path("retryable").asBoolean());
         return result;
+    }
+
+    private JsonNode executeToolAttempt(
+            ScenarioPack pack, Decision decision, ToolContext context, int attempt) {
+        ObjectNode run = context.run();
+        if (!str(run, "status").equals("RUNNING")) {
+            return obj("stopped", true);
+        }
+        int toolCalls = run.path("toolCalls").asInt();
+        if (toolCalls >= MAX_TOOL_CALLS) {
+            return obj("error", obj("code", "TOOL_LIMIT"), "message", "Tool-call limit reached.");
+        }
+        run.put("toolCalls", toolCalls + 1);
+        event(
+                run,
+                "tool",
+                attempt == 0 ? "Calling " + decision.tool() : "Retrying read once",
+                obj(
+                        "tool",
+                        decision.tool(),
+                        "args",
+                        redact(decision.args()),
+                        "attempt",
+                        attempt + 1));
+        try {
+            return invokeValidatedTool(pack, decision, context);
+        } catch (Problem problem) {
+            event(
+                    run,
+                    problem.code.equals("RESOURCE_NOT_AVAILABLE") ? "policy" : "error",
+                    problem.getMessage(),
+                    obj(
+                            "tool",
+                            decision.tool(),
+                            "code",
+                            problem.code,
+                            "retryable",
+                            problem.status == 503));
+            return obj(
+                    "error",
+                    obj("code", problem.code, "retryable", problem.status == 503),
+                    "message",
+                    problem.getMessage());
+        }
+    }
+
+    private JsonNode invokeValidatedTool(
+            ScenarioPack pack, Decision decision, ToolContext context) {
+        JsonNode schema = pack.schemas().get(decision.tool());
+        if (schema == null) {
+            throw new Problem(
+                    422, "TOOL_NOT_ALLOWED", "This tool is not allowed for the active pack.");
+        }
+        Schemas.validate(decision.args(), schema);
+        JsonNode toolResult = pack.invoke(decision.tool(), decision.args(), context);
+        if (!toolResult.isObject() || !toolResult.path("message").isTextual()) {
+            throw new Problem(
+                    502,
+                    "TOOL_RESULT_INVALID",
+                    "The adapter returned an invalid result; no completion is confirmed.");
+        }
+        event(
+                context.run(),
+                "evidence",
+                "Tool result recorded",
+                obj("tool", decision.tool(), "result", redact(toolResult)));
+        return toolResult.deepCopy();
     }
 
     private boolean recordToolOutput(
@@ -636,29 +628,7 @@ public class Harness {
                         return true;
                     }
                     if (output.has("error")) {
-                        if (processing.live()
-                                && Set.of("VALIDATION_FAILED", "TOOL_NOT_ALLOWED")
-                                        .contains(output.path("error").path("code").asText())
-                                && current.path("argumentRepairs").asInt() == 0) {
-                            current.put("argumentRepairs", 1);
-                            event(
-                                    current,
-                                    "repair",
-                                    "One model argument repair permitted",
-                                    obj("code", output.path("error").path("code")));
-                            return false;
-                        }
-                        reply(
-                                conversation,
-                                current,
-                                str(output, "message"),
-                                output.path("error")
-                                                .path("code")
-                                                .asText()
-                                                .equals("RESOURCE_NOT_AVAILABLE")
-                                        ? "COMPLETED"
-                                        : "FAILED");
-                        return true;
+                        return resolveToolFailure(processing, conversation, current, output);
                     }
                     if (output.has("policyCode")
                             || output.has("action")
@@ -672,6 +642,35 @@ public class Harness {
                     }
                     return !str(current, "status").equals("RUNNING");
                 });
+    }
+
+    private boolean resolveToolFailure(
+            ProcessingContext processing,
+            ObjectNode conversation,
+            ObjectNode current,
+            JsonNode output) {
+        boolean canRepairArguments =
+                processing.live()
+                        && Set.of("VALIDATION_FAILED", "TOOL_NOT_ALLOWED")
+                                .contains(output.path("error").path("code").asText())
+                        && current.path("argumentRepairs").asInt() == 0;
+        if (canRepairArguments) {
+            current.put("argumentRepairs", 1);
+            event(
+                    current,
+                    "repair",
+                    "One model argument repair permitted",
+                    obj("code", output.path("error").path("code")));
+            return false;
+        }
+        reply(
+                conversation,
+                current,
+                str(output, "message"),
+                output.path("error").path("code").asText().equals("RESOURCE_NOT_AVAILABLE")
+                        ? "COMPLETED"
+                        : "FAILED");
+        return true;
     }
 
     public static JsonNode redact(JsonNode n) {

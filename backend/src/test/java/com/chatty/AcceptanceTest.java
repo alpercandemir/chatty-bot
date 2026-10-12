@@ -473,6 +473,49 @@ class AcceptanceTest {
         return new Journey(j.session, j.workspace, str(harness.create(j.session, "live"), "id"));
     }
 
+    @ParameterizedTest(name = "live argument repair: {0}")
+    @ValueSource(strings = {"valid-order", "invalid-order"})
+    void liveArgumentsCanBeRepairedOnceWithoutDispatchingBusinessChanges(String repairCase)
+            throws Exception {
+        Journey journey = liveJourney(journey("commerce", "customer-aylin"));
+        JsonNode originalOrders = state(journey).path("orders").deepCopy();
+        AtomicInteger requests = new AtomicInteger();
+        boolean repairSucceeds = repairCase.equals("valid-order");
+        GeminiAdapter model =
+                new GeminiAdapter("fixture", "fixture") {
+                    @Override
+                    public Decision next(
+                            ScenarioPack scenarioPack, ObjectNode conversation, ObjectNode run) {
+                        int request = requests.incrementAndGet();
+                        if (request == 1) {
+                            return Decision.call("get_order", obj());
+                        }
+                        if (request == 2) {
+                            return Decision.call(
+                                    "get_order",
+                                    repairSucceeds ? obj("orderId", "NS-1002") : obj());
+                        }
+                        return Decision.say("Your order is shipped.", false);
+                    }
+
+                    @Override
+                    public void result(ObjectNode run, String tool, JsonNode result) {}
+                };
+
+        new Harness(store, model, List.of(pack), 6)
+                .message(journey.session, journey.conversation, "Track my order", id("client"));
+        ObjectNode conversation = waitRun(journey);
+
+        JsonNode run = conversation.path("run");
+        assertThat(str(run, "status")).isEqualTo(repairSucceeds ? "COMPLETED" : "FAILED");
+        assertThat(run.path("argumentRepairs").asInt()).isEqualTo(1);
+        assertThat(run.path("toolCalls").asInt()).isEqualTo(2);
+        assertThat(requests.get()).isEqualTo(repairSucceeds ? 3 : 2);
+        assertThat(state(journey).path("operations")).isEmpty();
+        assertThat(state(journey).path("actions")).isEmpty();
+        assertThat(state(journey).path("orders")).isEqualTo(originalOrders);
+    }
+
     @Test
     void liveProviderFailurePreservesDiagnosticsAndReleasesTheProcessingSlot() throws Exception {
         AtomicInteger requests = new AtomicInteger();

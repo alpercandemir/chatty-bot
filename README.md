@@ -190,7 +190,7 @@ Observed locally on **10 October 2026**:
 
 | Check | Result |
 | --- | --- |
-| Backend acceptance and safety suite | **28 tests passed**, including all 16 supplied journeys and provider-failure recovery |
+| Backend acceptance and safety suite | **30 tests passed**, including all 16 supplied journeys, provider-failure recovery, and bounded argument repair |
 | Public-HTTP scripted evaluation | **50 / 50 passed** |
 | Java package and frontend production bundle | Built successfully |
 | Real Gemini tracking | Completed with 2 model requests and 2 tool calls |
@@ -234,7 +234,7 @@ HTTP evaluations use a separate presenter workspace and reset it between cases. 
 
 ### Code formatting
 
-Code uses four spaces and explicit braces for conditionals and loops. Java uses Spotless with google-java-format's AOSP style, which distinguishes four-space block indentation from continuation indentation. Checkstyle rejects wildcard imports, missing braces, multiple declarations in one statement, and multiple statements on one line. YAML retains two-space indentation. Prettier formats frontend code, XML, and shell scripts with a 100-column target, and Black formats Python. See [Java conventions](docs/JAVA_STYLE.md) for the refactoring rules and their sources.
+Code uses four spaces and explicit braces for conditionals and loops. Java uses Spotless with google-java-format's AOSP style, which distinguishes four-space block indentation from continuation indentation. Checkstyle rejects wildcard imports, missing braces, multiple declarations in one statement, and multiple statements on one line; it reports review warnings for long methods, complex boolean expressions, and excessive nesting. YAML retains two-space indentation. Prettier formats frontend code, XML, and shell scripts with a 100-column target, and Black formats Python. The shared [Java agent guidelines](backend/AGENTS.md) govern Java changes; [Java conventions](docs/JAVA_STYLE.md) explain the tools and review thresholds.
 
 Install the formatting tools from the repository root:
 
