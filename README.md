@@ -8,6 +8,16 @@ Chatty combines a customer chat with a presenter view of tool calls, retrieved e
 
 > Local prototype with synthetic business data. Live Gemini integration is verified, but live responses can take about a minute. This project is not production-ready; see [verification and limitations](#verification-and-limitations).
 
+## Live Gemini demo
+
+[![Watch the Live Gemini demo](docs/recordings/demo-opening.png)](docs/recordings/chatty-live-gemini-full.webm)
+
+**[Watch the 3:09 screen-only demo](docs/recordings/chatty-live-gemini-full.webm)** — recorded with Gemini 3.5 Flash-Lite using minimal reasoning. The 13 live turns cover a confirmed address change, a declined cancellation, privacy boundaries, vague requests, and silly questions. Provider waits and recovered tool errors are included at their original speed.
+
+See the [demo notes](docs/recordings/DEMO_NOTES.md) for usage, verified outcomes, and observed rough edges.
+
+The [security and off-topic evaluation](docs/SECURITY_EVALUATION.md) covers 17 live scenarios, including prompt injection, permission and confirmation bypasses, and math, programming, science, and magazine questions. It also documents a fixed multiline FAQ-filter bypass, its regression tests, and eight follow-up checks of the business-only response policy.
+
 ## What it does
 
 | Scenario | Supported workflows |
@@ -63,6 +73,8 @@ Open [the studio](http://localhost/). Compose uses PostgreSQL for persistence an
 
 `AI_MODE=auto` selects Live AI for new conversations when a key is configured, otherwise scripted rehearsal. Existing conversations keep their selected mode. Use the mode buttons to start a new conversation; changing mode or customer starts a new customer session.
 
+Live AI stays within the selected business scenario. Unrelated math, programming, science, and entertainment questions receive a brief redirect. For mixed requests, the assistant handles the supported business question and skips the unrelated part.
+
 Live mode never silently falls back to rehearsal. Provider failures are reported explicitly, and the configured model is not automatically changed.
 
 ## Try a conversation
@@ -92,12 +104,6 @@ Ornek Bulvar 25, Daire 5, Atasehir, Istanbul, 34000, Turkey.
 ```
 
 Review the current and proposed address, then choose **Confirm** or **Keep unchanged**. Copy only the message text, rather than the surrounding walkthrough instructions. An address wrapped in backticks is accepted; walkthrough text mixed into the street address is rejected.
-
-In Live AI, you can also ask a follow-up such as:
-
-```text
-Is it really necessary to specify city?
-```
 
 **Cancel an order or request support**
 
@@ -194,7 +200,7 @@ Observed locally on **10 October 2026**:
 | Public-HTTP scripted evaluation | **50 / 50 passed** |
 | Java package and frontend production bundle | Built successfully |
 | Real Gemini tracking | Completed with 2 model requests and 2 tool calls |
-| Real Gemini address follow-up | Answered the city question directly with an approved address-policy citation |
+| Real Gemini address follow-up | Answered an address-policy clarification with an approved policy citation |
 | Browser persistence | Conversation and confirmed simulator state survived reload |
 | Docker Compose configuration | Validated; image startup and PostgreSQL execution remain unverified |
 

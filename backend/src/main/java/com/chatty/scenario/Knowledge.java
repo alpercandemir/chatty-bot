@@ -82,7 +82,7 @@ public class Knowledge {
             if (str(source, "content")
                     .toLowerCase(Locale.ROOT)
                     .matches(
-                            ".*(bypass confirmations|ignore.*instructions|cancel every order|execute_sql).*")) {
+                            "(?s).*(bypass confirmations|ignore.*instructions|cancel every order|execute_sql).*")) {
                 return obj(
                         "message",
                         "The retrieved evidence conflicts with the registered policy. I cannot rely on it; please request support.",

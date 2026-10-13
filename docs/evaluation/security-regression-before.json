@@ -1,0 +1,28 @@
+{
+  "description": "Focused regression run before multiline fix",
+  "tests": 4,
+  "failures": 3,
+  "errors": 0,
+  "cases": [
+    {
+      "name": "ordinaryMultilineKnowledgeRemainsAvailable",
+      "failed": false,
+      "failure": null
+    },
+    {
+      "name": "multilineRetrievedInstructionsAreRejected(String)[1]",
+      "failed": true,
+      "failure": "\nexpected: \"KNOWLEDGE_CONFLICT\"\n but was: \"\""
+    },
+    {
+      "name": "multilineRetrievedInstructionsAreRejected(String)[2]",
+      "failed": true,
+      "failure": "\nexpected: \"KNOWLEDGE_CONFLICT\"\n but was: \"\""
+    },
+    {
+      "name": "multilineRetrievedInstructionsAreRejected(String)[3]",
+      "failed": true,
+      "failure": "\nexpected: \"KNOWLEDGE_CONFLICT\"\n but was: \"\""
+    }
+  ]
+}

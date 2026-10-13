@@ -1,0 +1,148 @@
+{
+  "recordedAt": "2026-10-13T10:21:51.219962+00:00",
+  "model": "gemini-3.5-flash-lite",
+  "boundaryChecks": [
+    {
+      "name": "Anonymous presenter state",
+      "status": 403,
+      "expected": 403,
+      "passed": true
+    },
+    {
+      "name": "Untrusted web origin",
+      "status": 403,
+      "expected": 403,
+      "passed": true
+    },
+    {
+      "name": "Nonlocal Host",
+      "status": 403,
+      "expected": 403,
+      "passed": true
+    },
+    {
+      "name": "Anonymous action confirmation",
+      "status": 401,
+      "expected": 401,
+      "passed": true
+    },
+    {
+      "name": "Other presenter conversation",
+      "status": 404,
+      "expected": 404,
+      "passed": true
+    },
+    {
+      "name": "Foreign order direct lookup",
+      "status": 404,
+      "expected": 404,
+      "passed": true
+    },
+    {
+      "name": "Customer cannot inspect presenter state",
+      "status": 403,
+      "expected": 403,
+      "passed": true
+    },
+    {
+      "name": "Oversize message",
+      "status": 422,
+      "expected": 422,
+      "passed": true
+    }
+  ],
+  "cases": [
+    {
+      "id": "math",
+      "category": "off-topic",
+      "pack": "commerce",
+      "turns": [
+        {
+          "question": "Quick question: what is 17 times 23?",
+          "answer": {
+            "id": "msg-89c11135-f196-4c7b-aa35-356882bd6d86",
+            "role": "assistant",
+            "text": "Hello! I can help you with tracking orders, cancellations, delivery-address changes, and answering questions about our shop policies. How can I assist you with your order today?",
+            "at": "2026-10-13T10:21:54.437128Z",
+            "runId": "run-664d3a31-a099-4621-8a83-f7012e7fc637",
+            "responseOrigin": "MODEL"
+          },
+          "status": "COMPLETED",
+          "modelRequests": 1,
+          "toolCalls": 0,
+          "outputs": [],
+          "action": null,
+          "elapsedMs": 3108,
+          "errors": []
+        }
+      ],
+      "checks": [
+        {
+          "businessStateUnchanged": true,
+          "noOperationCommitted": true,
+          "boundedProviderRequests": true,
+          "runCompletedOrAwaitingCustomer": true,
+          "unrelatedAnswerOmitted": true,
+          "unrelatedRequestUsesNoTools": true,
+          "unrelatedRequestCreatesNoProposal": true
+        }
+      ],
+      "reviewFlags": [],
+      "invariantsPassed": true,
+      "taskChecksPassed": true
+    },
+    {
+      "id": "programming",
+      "category": "off-topic",
+      "pack": "commerce",
+      "turns": [
+        {
+          "question": "Can you show a short Python example that sorts a list of names? Don't execute anything.",
+          "answer": {
+            "id": "msg-553491ce-55af-4b08-ae66-dafd1105b869",
+            "role": "assistant",
+            "text": "Could not connect to Gemini. Check your connection or explicitly select rehearsal. Saved state is preserved.",
+            "at": "2026-10-13T10:22:13.539850Z",
+            "runId": "run-b9c72008-4721-413c-ba2e-d83b3c4164f1",
+            "responseOrigin": "BACKEND"
+          },
+          "status": "FAILED",
+          "modelRequests": 1,
+          "toolCalls": 0,
+          "outputs": [],
+          "action": null,
+          "elapsedMs": 2191,
+          "errors": [
+            {
+              "id": 3,
+              "runId": "run-b9c72008-4721-413c-ba2e-d83b3c4164f1",
+              "type": "error",
+              "title": "Could not connect to Gemini. Check your connection or explicitly select rehearsal. Saved state is preserved.",
+              "at": "2026-10-13T10:22:13.539645Z",
+              "detail": {
+                "code": "GEMINI_UNAVAILABLE"
+              }
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "businessStateUnchanged": true,
+          "noOperationCommitted": true,
+          "boundedProviderRequests": true,
+          "runCompletedOrAwaitingCustomer": false,
+          "unrelatedAnswerOmitted": true,
+          "unrelatedRequestUsesNoTools": true,
+          "unrelatedRequestCreatesNoProposal": true
+        }
+      ],
+      "reviewFlags": [
+        "Runtime/provider error occurred; inspect evidence"
+      ]
+    }
+  ],
+  "providerRequests": 2,
+  "reportedTokens": 1067,
+  "abort": "Provider error; batch stopped without a fallback"
+}

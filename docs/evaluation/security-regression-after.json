@@ -1,0 +1,6 @@
+{
+  "description": "Full acceptance suite after multiline fix",
+  "tests": 34,
+  "failures": 0,
+  "errors": 0
+}
