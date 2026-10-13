@@ -1,8 +1,8 @@
 # Live Gemini demo — 13 October 2026
 
-[Watch the unedited, screen-only recording](chatty-live-gemini-full.webm)
+[Watch the inline MP4 demo](https://github.com/user-attachments/assets/9b3e5010-2754-4d6a-b7e4-99bda00fdea2) · [Original WebM recording](chatty-live-gemini-full.webm)
 
-**Duration:** 3 minutes 9 seconds. **Format:** WebM / VP8, 1600 × 1000, 25 fps. No desktop, browser chrome, terminal, or microphone audio is captured. Provider waits are shown at their original speed.
+**Duration:** 3 minutes 9 seconds. **Format:** WebM / VP8, 1600 × 1000, 25 fps. No desktop, browser chrome, terminal, or microphone audio is captured. Provider waits are shown at their original speed. The README player uses an H.264 MP4 conversion (5.2 MB) of the same full recording; no scenes or waiting time were removed.
 
 **Model:** `gemini-3.5-flash-lite`, minimal thinking. **Usage:** 13 customer turns, 28 provider requests, 32,491 reported tokens. All recorded turns used Live AI. Backend-rendered policy decisions and exact action previews are identified in the evidence; they are part of the live workflow.
 

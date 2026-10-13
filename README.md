@@ -10,9 +10,11 @@ Chatty combines a customer chat with a presenter view of tool calls, retrieved e
 
 ## Live Gemini demo
 
-[![Watch the Live Gemini demo](docs/recordings/demo-opening.png)](docs/recordings/chatty-live-gemini-full.webm)
+https://github.com/user-attachments/assets/9b3e5010-2754-4d6a-b7e4-99bda00fdea2
 
-**[Watch the 3:09 screen-only demo](docs/recordings/chatty-live-gemini-full.webm)** — recorded with Gemini 3.5 Flash-Lite using minimal reasoning. The 13 live turns cover a confirmed address change, a declined cancellation, privacy boundaries, vague requests, and silly questions. Provider waits and recovered tool errors are included at their original speed.
+**3:09 screen-only demo** — recorded with Gemini 3.5 Flash-Lite using minimal reasoning. The 13 live turns cover a confirmed address change, a declined cancellation, privacy boundaries, vague requests, and silly questions. Provider waits and recovered tool errors are included at their original speed.
+
+[Open the video directly](https://github.com/user-attachments/assets/9b3e5010-2754-4d6a-b7e4-99bda00fdea2) · [Download the original recording](https://github.com/alpercandemir/chatty-bot/raw/refs/heads/main/docs/recordings/chatty-live-gemini-full.webm)
 
 See the [demo notes](docs/recordings/DEMO_NOTES.md) for usage, verified outcomes, and observed rough edges.
 
