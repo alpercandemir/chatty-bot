@@ -105,7 +105,7 @@ To resume a quota-interrupted run without overwriting its evidence:
 python3 scripts/security-evaluate.py --start-case science --max-provider-requests 30 --output docs/evaluation/security-live-continuation.json
 ```
 
-Run the backend regression suite with Java 21 selected:
+Run the backend regression suite with Java 25 selected:
 
 ```sh
 mvn -f backend/pom.xml verify

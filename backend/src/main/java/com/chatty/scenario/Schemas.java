@@ -3,9 +3,9 @@ package com.chatty.scenario;
 import static com.chatty.store.Json.obj;
 
 import com.chatty.api.Problem;
-import com.fasterxml.jackson.databind.JsonNode;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import tools.jackson.databind.JsonNode;
 
 public final class Schemas {
 
@@ -44,8 +44,8 @@ public final class Schemas {
                 throw invalid();
             }
         }
-        args.fieldNames()
-                .forEachRemaining(
+        args.propertyNames()
+                .forEach(
                         fieldName -> {
                             JsonNode propertySchema = schema.path("properties").get(fieldName);
                             if (propertySchema == null) {

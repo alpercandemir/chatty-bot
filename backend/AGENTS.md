@@ -196,7 +196,7 @@ Briefly explain meaningful trade-offs or deviations in the final change summary.
 
 ## Repository-specific application
 
-- This repository uses Java 21 and Spring Boot. Preserve the existing scenario-pack
+- This repository uses Java 25 and Spring Boot. Preserve the existing scenario-pack
   architecture and database transaction boundaries.
 - Use the pinned Spotless formatter with google-java-format's AOSP style: four-space
   block indentation and formatter-controlled continuation indentation. Section 10's
@@ -207,6 +207,6 @@ Briefly explain meaningful trade-offs or deviations in the final change summary.
   as errors. Method-length, boolean-complexity, and nesting checks are review warnings,
   not automatic reasons to split a coherent workflow. Its nesting checks measure
   each construct separately; review mixed `if`/loop/`switch` nesting manually.
-- Use `npm run format:check` for the repository-wide formatting checks with Java 21
+- Use `npm run format:check` for the repository-wide formatting checks with Java 25
   selected and the documented Python virtual environment active.
 - Never edit already-applied Flyway migrations solely to reformat them.

@@ -1,7 +1,5 @@
 server:
   port: ${PORT:8080}
-  error:
-    include-message: never
 spring:
   datasource:
     url: ${DATABASE_URL:jdbc:h2:file:./data/chatty;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE}
@@ -13,11 +11,13 @@ spring:
     template:
       query-timeout: 5s
   jackson:
-    serialization:
-      write-dates-as-timestamps: false
+    use-jackson2-defaults: true
   mvc:
     async:
       request-timeout: 65000
+  web:
+    error:
+      include-message: never
 chatty:
   model: ${AI_MODEL:gemini-3.8-flash}
   key: ${GEMINI_API_KEY:}

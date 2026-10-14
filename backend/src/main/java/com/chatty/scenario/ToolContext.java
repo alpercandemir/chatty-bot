@@ -7,9 +7,9 @@ import static com.chatty.store.Json.str;
 import static com.chatty.store.WorkspaceStore.event;
 
 import com.chatty.api.Problem;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Instant;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 public record ToolContext(
         ObjectNode state, ObjectNode conversation, ObjectNode run, String principal) {

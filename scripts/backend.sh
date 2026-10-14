@@ -7,7 +7,7 @@ if [[ -f .env ]]; then
         export "$line"
     done < .env
 fi
-if [[ -z "${JAVA_HOME:-}" && -d /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home ]]; then
-    export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
+if [[ -z "${JAVA_HOME:-}" && -d /opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home ]]; then
+    export JAVA_HOME=/opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home
 fi
 exec "${JAVA_HOME:+$JAVA_HOME/bin/}java" -jar backend/target/chatty-0.1.0.jar

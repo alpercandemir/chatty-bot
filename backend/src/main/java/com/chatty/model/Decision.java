@@ -1,6 +1,6 @@
 package com.chatty.model;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 public record Decision(String tool, JsonNode args, String reply, boolean needsInput) {
     public static Decision call(String tool, JsonNode args) {

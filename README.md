@@ -46,11 +46,13 @@ For Live AI, edit `.env` locally and set `GEMINI_API_KEY` to your Google AI Stud
 
 **Native development — macOS or Linux**
 
-Requirements: Java 21, Maven 3.9+, Node.js 22.12+ and npm. Python 3 is needed only for the HTTP evaluation scripts.
+Requirements: Java 25, Maven 3.9+, Node.js 22.12+ and npm. Python 3 is needed only for the HTTP evaluation scripts.
 
 ```sh
 ./scripts/dev.sh
 ```
+
+Set `JAVA_HOME` to your JDK 25 installation before running Maven. On Apple Silicon macOS, the scripts select Homebrew’s `openjdk@25` when `JAVA_HOME` is unset.
 
 This builds the backend, installs and builds the frontend, then starts both development services. Native development stores persistent simulator data in an H2 database under `data/`.
 
@@ -167,9 +169,11 @@ Live runs use low reasoning effort, one active provider run at a time, a maximum
 
 The intended provider setup is a Google AI Studio Free Tier project with access to the selected model. The application cannot inspect or change the project's billing tier. Quota, credential, model-access and connection errors are surfaced without enabling billing or switching to a paid fallback. See [Gemini setup](docs/GEMINI_SETUP.md).
 
+Gemini failures write one `Run failed` warning to the backend logs with the run and conversation references, model, provider HTTP code, status, sanitized error message, exception types, and retryability. For Docker, use `docker compose logs -f backend` to follow these warnings. API keys are redacted; transport errors use a safe summary rather than the raw exception text.
+
 ## Architecture
 
-- **Backend:** Java 21, Spring Boot, official Google GenAI Java SDK, JDBC and Flyway.
+- **Backend:** Java 25, Spring Boot 4.1.1, official Google GenAI Java SDK, JDBC and Flyway.
 - **Frontend:** React, TypeScript, Vite and Lucide icons.
 - **Persistence:** H2 for native development; PostgreSQL in Compose.
 
@@ -212,10 +216,10 @@ This is a local, single-operator prototype. Public hosting, production customer 
 
 ### Run the checks
 
-From the repository root, with Java 21 selected:
+From the repository root, with Java 25 selected:
 
 ```sh
-mvn -f backend/pom.xml test
+mvn -f backend/pom.xml verify
 npm --prefix frontend ci
 npm --prefix frontend run build
 ```
@@ -253,7 +257,7 @@ source .venv/bin/activate
 python3 -m pip install -r requirements-dev.txt
 ```
 
-With Java 21 selected and the virtual environment active, use `npm run format` to format the code or `npm run format:check` to check it without changing files. `mvn -f backend/pom.xml verify` runs Java style checks, tests, and formatting validation. Generated output, local data, evaluation reports, documentation, and demo fixtures are excluded from automatic formatting.
+With Java 25 selected and the virtual environment active, use `npm run format` to format the code or `npm run format:check` to check it without changing files. `mvn -f backend/pom.xml verify` runs Java style checks, tests, and formatting validation. Generated output, local data, evaluation reports, documentation, and demo fixtures are excluded from automatic formatting.
 
 ## API and project layout
 

@@ -3,6 +3,7 @@ package com.chatty;
 import static com.chatty.store.Json.find;
 import static com.chatty.store.Json.id;
 import static com.chatty.store.Json.obj;
+import static com.chatty.store.Json.parse;
 import static com.chatty.store.Json.str;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -18,8 +19,6 @@ import com.chatty.model.Decision;
 import com.chatty.model.GeminiAdapter;
 import com.chatty.scenario.ScenarioPack;
 import com.chatty.store.WorkspaceStore;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.servlet.http.Cookie;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -30,14 +29,19 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 @SpringBootTest(
         properties = {
@@ -340,6 +344,35 @@ class AcceptanceTest {
     }
 
     @Test
+    void healthReturnsJson() throws Exception {
+        var response =
+                mvc.perform(get("/api/v1/health"))
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse();
+        assertThat(response.getContentType()).startsWith("application/json");
+        assertThat(parse(response.getContentAsString()))
+                .isEqualTo(obj("status", "UP", "simulated", true));
+    }
+
+    @Test
+    void openApiDescribesConversationEndpointsForPresenter() throws Exception {
+        var presenter =
+                sessions.bootstrap(new MockHttpServletRequest(), new MockHttpServletResponse());
+        var response =
+                mvc.perform(
+                                get("/v3/api-docs")
+                                        .cookie(new Cookie("chatty_presenter", presenter.token())))
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse();
+        JsonNode schema = parse(response.getContentAsString());
+        assertThat(schema.path("openapi").asText()).startsWith("3.");
+        assertThat(schema.path("paths").path("/api/v1/conversations").has("post")).isTrue();
+        assertThat(schema.path("paths").path("/api/v1/conversations/{id}").has("get")).isTrue();
+    }
+
+    @Test
     void httpBoundaryAndResetInvalidation() throws Exception {
         mvc.perform(get("/api/v1/demo/state")).andExpect(status().isForbidden());
         mvc.perform(post("/api/v1/demo/presenter").header("Origin", "https://evil.example"))
@@ -551,9 +584,12 @@ class AcceptanceTest {
     }
 
     @Test
-    void liveProviderFailurePreservesDiagnosticsAndReleasesTheProcessingSlot() throws Exception {
+    @ExtendWith(OutputCaptureExtension.class)
+    void liveProviderFailurePreservesDiagnosticsAndReleasesTheProcessingSlot(CapturedOutput logs)
+            throws Exception {
         AtomicInteger requests = new AtomicInteger();
-        JsonNode providerError = obj("httpCode", 0, "status", "TRANSPORT_OR_SDK");
+        JsonNode providerError =
+                obj("httpCode", 0, "status", "TRANSPORT_OR_SDK", "message", "Connection closed");
         Problem providerFailure =
                 GeminiAdapter.failure(new java.io.IOException("Connection closed"));
         GeminiAdapter model =
@@ -580,6 +616,20 @@ class AcceptanceTest {
                 .isEqualTo("IOException");
         assertThat(failedConversation.path("run").path("modelRequests").asInt()).isEqualTo(1);
         assertThat(failedConversation.path("run").toString()).contains(providerFailure.code);
+        JsonNode errorEvent = null;
+        for (JsonNode event : failedConversation.path("run").path("events")) {
+            if (str(event, "type").equals("error")) {
+                errorEvent = event;
+            }
+        }
+        assertThat(errorEvent).isNotNull();
+        assertThat(errorEvent.path("detail")).isEqualTo(obj("code", providerFailure.code));
+        assertThat(logs.getOut())
+                .contains(
+                        "Run failed: runId=" + str(failedConversation.path("run"), "id"),
+                        "conversationId=" + failedJourney.conversation,
+                        "TRANSPORT_OR_SDK",
+                        "Connection closed");
         assertThat(state(failedJourney).path("operations")).isEmpty();
 
         Journey nextJourney = liveJourney(journey("commerce", "customer-aylin"));

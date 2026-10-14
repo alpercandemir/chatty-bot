@@ -15,9 +15,6 @@ import com.chatty.scenario.ScenarioPack;
 import com.chatty.scenario.Schemas;
 import com.chatty.scenario.ToolContext;
 import com.chatty.store.WorkspaceStore;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -31,14 +28,20 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 @Component
 public class Harness {
 
+    private static final Logger LOG = LoggerFactory.getLogger(Harness.class);
     private static final int MAX_MESSAGE_CHARACTERS = 4000;
     private static final int MAX_CLIENT_MESSAGE_ID_CHARACTERS = 120;
     private static final int MAX_RUNS_PER_MINUTE = 30;
@@ -361,7 +364,16 @@ public class Harness {
                         ObjectNode run = find(state.path("runs"), runId);
                         if (run != null
                                 && Set.of("RUNNING", "QUEUED").contains(str(run, "status"))) {
+                            ObjectNode detail = obj("code", p.code, "model", run.path("model"));
+                            if (run.has("providerError")) {
+                                detail.set("providerError", run.path("providerError").deepCopy());
+                            }
                             event(run, "error", p.getMessage(), obj("code", p.code));
+                            LOG.warn(
+                                    "Run failed: runId={} conversationId={} diagnostics={}",
+                                    runId,
+                                    conversationId,
+                                    detail);
                             reply(
                                     find(state.path("conversations"), conversationId),
                                     run,
@@ -677,8 +689,7 @@ public class Harness {
         JsonNode copy = n.deepCopy();
         if (copy.isObject()) {
             ObjectNode o = (ObjectNode) copy;
-            List<String> keys = new ArrayList<>();
-            o.fieldNames().forEachRemaining(keys::add);
+            List<String> keys = new ArrayList<>(o.propertyNames());
             for (String k : keys) {
                 if (Set.of(
                                 "line1",

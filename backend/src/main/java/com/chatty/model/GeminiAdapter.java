@@ -7,9 +7,6 @@ import static com.chatty.store.Json.str;
 
 import com.chatty.api.Problem;
 import com.chatty.scenario.ScenarioPack;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.genai.Client;
 import com.google.genai.types.Content;
 import com.google.genai.types.FunctionDeclaration;
@@ -27,6 +24,9 @@ import java.util.Locale;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 @Component
 public class GeminiAdapter {
@@ -203,23 +203,53 @@ public class GeminiAdapter {
                 cause = cause.getCause();
             }
             run.put("providerCauseType", cause.getClass().getSimpleName());
+            Problem problem = failure(cause);
             int http = cause instanceof com.google.genai.errors.ApiException a ? a.code() : 0;
             run.set(
                     "providerError",
                     obj(
+                            "provider",
+                            "gemini",
+                            "model",
+                            model,
                             "exceptionType",
                             exception.getClass().getSimpleName(),
+                            "causeType",
+                            cause.getClass().getSimpleName(),
                             "httpCode",
                             http,
                             "status",
                             cause instanceof com.google.genai.errors.ApiException a
-                                    ? a.status()
-                                    : "TRANSPORT_OR_SDK"));
-            throw failure(cause);
+                                    ? diagnosticText(a.status())
+                                    : "TRANSPORT_OR_SDK",
+                            "message",
+                            cause instanceof com.google.genai.errors.ApiException a
+                                    ? diagnosticText(a.message())
+                                    : problem.getMessage(),
+                            "retryable",
+                            http == 429
+                                    || http >= 500
+                                    || cause instanceof java.util.concurrent.TimeoutException
+                                    || cause instanceof java.io.IOException));
+            throw problem;
         }
     }
 
-    private GenerateContentResponse generate(
+    private String diagnosticText(String text) {
+        String safe = text == null ? "" : text;
+        if (!key.isBlank()) {
+            safe = safe.replace(key, "[REDACTED]");
+        }
+        safe =
+                safe.replaceAll("AIza[\\w-]{35}", "[REDACTED]")
+                        .replaceAll("(?i)([?&](?:key|api_key)=)[^\\s&\"']+", "$1[REDACTED]")
+                        .replaceAll("\\p{Cntrl}", " ")
+                        .replaceAll("\\s+", " ")
+                        .trim();
+        return safe.length() > 500 ? safe.substring(0, 500) + "…" : safe;
+    }
+
+    protected GenerateContentResponse generate(
             List<Content> contents, GenerateContentConfig config, ObjectNode run) throws Exception {
         long budget =
                 run.has("deadlineAt")
