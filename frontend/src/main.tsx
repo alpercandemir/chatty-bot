@@ -373,11 +373,7 @@ function App() {
                         <span className="environment">
                             <span /> Demo environment
                         </span>
-                        <a
-                            href="/swagger-ui.html"
-                            target="_blank"
-                            rel="noreferrer"
-                        >
+                        <a href="/swagger-ui.html" target="_blank" rel="noreferrer">
                             <Code2 size={16} /> API docs <ExternalLink size={12} />
                         </a>
                     </div>
