@@ -4,7 +4,7 @@
 
 A local AI service assistant that reads business records, answers questions, and completes permitted tasks after the customer confirms the exact change.
 
-Chatty combines a customer chat with a presenter view of tool calls, retrieved evidence, proposals, and persisted outcomes. Two scenario packs demonstrate the same runtime: **Northstar Shop** for commerce support and **ClearSpace Cleaning** for service enquiries and callback intake.
+Chatty combines a customer chat with a presenter view of tool calls, retrieved evidence, proposals, and persisted outcomes. The demo UI focuses on **Northstar Shop** commerce support, with four selectable customers and a brief order summary beside the chat. Technical execution details, saved runs and repeatable journeys are available in the optional **Inspector**.
 
 ![Chatty demo studio](docs/browser-verification-desktop.jpg)
 
@@ -27,7 +27,6 @@ The [security and off-topic evaluation](docs/SECURITY_EVALUATION.md) covers 17 l
 | Scenario | Supported workflows |
 | --- | --- |
 | Commerce | Shipment tracking, eligible order cancellation, delivery-address changes within Turkey, approved FAQs with citations, and support-request intake |
-| Cleaning services | Approved FAQs, cleaning-service qualification, CRM-demo qualification, and callback-request intake |
 | Shared studio | Customer selection, execution timeline, business-state inspection, saved run history, repeatable journeys, and failure simulation |
 
 Business systems are simulated. A support request is saved as **QUEUED**, and a callback request as **REQUESTED**. Neither connects a human, books a calendar appointment, sends an external message, nor moves money.
@@ -87,7 +86,7 @@ Live mode never silently falls back to rehearsal. Provider failures are reported
 
 ## Try a conversation
 
-Choose **Northstar Shop** and **Aylin Demo**. Use Live AI for natural follow-ups, or scripted rehearsal for the exact sample messages below. After experimenting, use **Reset demo data** to restore the fixtures.
+Select **Aylin** in the customer panel. Use Live AI for natural follow-ups, or scripted rehearsal for the exact sample messages below. After experimenting, use **Reset demo** to restore the fixtures.
 
 **Track a shipment**
 
@@ -133,23 +132,24 @@ Please create a support request about this order.
 
 The persisted handoff is a simulated support-queue entry, not a live human connection.
 
-**Qualify a cleaning enquiry**
+The customer panel includes four short scenarios:
 
-Switch to **ClearSpace Cleaning** and send:
+| Customer | Demo context |
+| --- | --- |
+| Aylin | Track NS-1002 or change the address on NS-1001 |
+| Mert | Cancel the processing speaker order, NS-1007 |
+| Deniz | Ask about returns for the delivered mouse, NS-1009 |
+| Selin | Check delayed order NS-1010 or split shipment NS-1011 |
 
-```text
-I need weekly cleaning for a 250 square meter office in Atasehir. Please contact office@example.invalid next weekday afternoon.
-```
-
-Review the callback details before confirming. The preferred time is a preference, not a booked appointment.
+Switching customers starts a new chat. Order summaries reflect confirmed changes; **Reset demo** restores the sample data. Existing demo workspaces receive the added customers without losing their conversations or changed orders.
 
 ## Explore the execution
 
-Turn on **Presenter mode** to inspect:
+Open **Inspector** to inspect:
 
 - **Execution:** registered tool calls, evidence, policy checks, confirmations and outcomes.
 - **Business state:** persisted orders, proposals, operations and request records.
-- **Journeys:** all 16 supplied scenarios, with explicit customer and presenter steps.
+- **Journeys:** the commerce scenarios, with explicit customer and presenter steps.
 - **History:** saved runs and their execution events.
 
 For a repeatable demonstration, choose a journey, select **Prepare this journey**, and use **Run next step**. Preparing a journey resets that presenter workspace.

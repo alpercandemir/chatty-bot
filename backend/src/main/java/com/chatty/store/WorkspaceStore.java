@@ -43,7 +43,7 @@ public class WorkspaceStore {
                         "resetAt",
                         Instant.now().toString(),
                         "fixtureVersion",
-                        "1.0.0");
+                        str(seed, "fixtureVersion"));
         copyWorkspaceFixtures(state, base);
         initializeOrders(state);
         initializeShipments(state);
@@ -129,8 +129,32 @@ public class WorkspaceStore {
                                 workspace,
                                 initial.toString());
                         syncKnowledge(workspace, initial);
+                    } else {
+                        addMissingFixtures(workspace, pack);
                     }
                 });
+    }
+
+    private void addMissingFixtures(String workspace, String pack) {
+        ObjectNode state = load(workspace, true);
+        if (str(state, "fixtureVersion").equals(str(seed, "fixtureVersion"))) {
+            return;
+        }
+        ObjectNode fixtures = fresh(pack);
+        // Existing orders and conversations retain their state when demo customers are added.
+        for (String collection : new String[] {"principals", "orders", "shipments"}) {
+            ArrayNode records = (ArrayNode) state.path(collection);
+            for (JsonNode record : fixtures.path(collection)) {
+                if (find(records, str(record, "id")) == null) {
+                    records.add(record.deepCopy());
+                }
+            }
+        }
+        state.put("fixtureVersion", str(seed, "fixtureVersion"));
+        jdbc.update(
+                "UPDATE demo_workspace SET document=?,revision=revision+1 WHERE id=?",
+                state.toString(),
+                workspace);
     }
 
     public void syncKnowledge(String workspace, ObjectNode state) {
