@@ -51,7 +51,6 @@ public record ToolContext(
                         title);
         state.withArray("actions").add(action);
         conversation.put("actionId", str(action, "id"));
-        run.put("status", "WAITING_FOR_CONFIRMATION");
         event(
                 run,
                 "confirmation",
