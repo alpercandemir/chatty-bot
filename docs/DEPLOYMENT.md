@@ -22,6 +22,8 @@ The hosted Compose configuration forces `AI_MODE=live`, `AI_LIVE_ONLY=true`, and
 
 ## CI/CD
 
+`main` requires a pull request approved by the code owner, `@alpercandemir`, plus the passing GitHub Actions `ci` check on an up-to-date branch. New commits dismiss old approvals; review conversations must be resolved. Force pushes and branch deletion are blocked. The repository owner retains GitHub's administrative override for owner-authored changes and recovery; ordinary contributors cannot bypass the review rule. Public fork PRs run tests but do not publish images or receive deployment secrets.
+
 The workflow follows the same pattern as rparadise:
 
 1. A push or pull request targeting `main` runs Java 25 verification, frontend compilation, and ARM container builds.
