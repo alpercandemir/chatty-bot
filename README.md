@@ -6,17 +6,19 @@ A local AI service assistant that reads business records, answers questions, and
 
 Chatty combines a customer chat with a presenter view of tool calls, retrieved evidence, proposals, and persisted outcomes. The demo UI focuses on **Northstar Shop** commerce support, with four selectable customers and a brief order summary beside the chat. Technical execution details, saved runs and repeatable journeys are available in the optional **Inspector**.
 
+![Chatty demo studio](docs/browser-verification-desktop.jpg)
+
 > Public demo with synthetic business data. The hosted app uses Live AI only; live responses can take about a minute. This project is not production-ready; see [verification and limitations](#verification-and-limitations).
 
-## Commerce demo
+## Live Gemini demo
 
-[![Watch the commerce demo](docs/browser-verification-desktop.jpg)](https://chatty.138.2.168.194.sslip.io/demo/)
+https://github.com/user-attachments/assets/9b3e5010-2754-4d6a-b7e4-99bda00fdea2
 
-[Watch the video](https://chatty.138.2.168.194.sslip.io/demo/) · [Download MP4](https://chatty.138.2.168.194.sslip.io/demo/chatty-commerce-demo.mp4)
+**3:09 screen-only demo** — recorded with Gemini 3.5 Flash-Lite using minimal reasoning. The 13 live turns cover a confirmed address change, a declined cancellation, privacy boundaries, vague requests, and silly questions. Provider waits and recovered tool errors are included at their original speed. This recording predates the current interface refresh.
 
-**1:39 edited walkthrough** with real **Live AI** interactions: tracking, customer privacy, mandatory confirmation, an address change, and Inspector verification. It also introduces four brief customer scenarios. Long provider waits are removed; all business data is synthetic. The video is assembled from captured application screens with reading pauses.
+[Open the video directly](https://github.com/user-attachments/assets/9b3e5010-2754-4d6a-b7e4-99bda00fdea2) · [Download the original recording](https://github.com/alpercandemir/chatty-bot/raw/refs/heads/main/docs/recordings/chatty-live-gemini-full.webm)
 
-See the [demo notes](docs/recordings/DEMO_NOTES.md) for chapters, observed results, source screenshots, and reproduction details.
+See the [demo notes](docs/recordings/DEMO_NOTES.md) for usage, verified outcomes, and observed rough edges.
 
 The [security and off-topic evaluation](docs/SECURITY_EVALUATION.md) covers 17 live scenarios, including prompt injection, permission and confirmation bypasses, and math, programming, science, and magazine questions. It also documents a fixed multiline FAQ-filter bypass, its regression tests, and eight follow-up checks of the business-only response policy.
 
