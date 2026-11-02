@@ -305,9 +305,7 @@ public class Harness {
             if (isLive) {
                 if (!live.tryAcquire(LIVE_QUEUE_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                     throw new Problem(
-                            429,
-                            "LIVE_QUEUE_TIMEOUT",
-                            "Live AI is busy. Retry later or choose rehearsal.");
+                            429, "LIVE_QUEUE_TIMEOUT", "Live AI is busy. Please retry later.");
                 }
                 acquired = true;
             }

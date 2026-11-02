@@ -10,6 +10,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Set;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.node.ObjectNode;
@@ -27,10 +28,15 @@ public class Sessions {
 
     private final JdbcTemplate db;
     private final WorkspaceStore store;
+    private final boolean secureCookies;
 
-    public Sessions(JdbcTemplate db, WorkspaceStore store) {
+    public Sessions(
+            JdbcTemplate db,
+            WorkspaceStore store,
+            @Value("${chatty.secure-cookies:false}") boolean secureCookies) {
         this.db = db;
         this.store = store;
+        this.secureCookies = secureCookies;
     }
 
     private Session cookie(HttpServletRequest request, String name) {
@@ -142,6 +148,10 @@ public class Sessions {
     private void setCookie(HttpServletResponse response, String name, String value) {
         response.addHeader(
                 "Set-Cookie",
-                name + "=" + value + "; HttpOnly; SameSite=Strict; Path=/; Max-Age=86400");
+                name
+                        + "="
+                        + value
+                        + "; HttpOnly; SameSite=Strict; Path=/; Max-Age=86400"
+                        + (secureCookies ? "; Secure" : ""));
     }
 }

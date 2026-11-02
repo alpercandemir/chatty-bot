@@ -57,7 +57,7 @@ function App() {
     const previous = useRef(saved());
     const [pack, setPack] = useState(previous.current?.pack || 'commerce');
     const [principal, setPrincipal] = useState(previous.current?.principal || 'customer-aylin');
-    const [mode, setMode] = useState(previous.current?.mode || 'scripted');
+    const [mode, setMode] = useState(previous.current?.mode || 'live');
     const [conv, setConv] = useState<J>(null);
     const [config, setConfig] = useState<J>(null);
     const [state, setState] = useState<J>(null);
@@ -111,6 +111,7 @@ function App() {
         };
     };
     const begin = async (p: string, who: string, m: string, reset = false) => {
+        m = config?.liveOnly ? 'live' : m;
         source.current?.close();
         setBusy(true);
         setError('');
@@ -147,7 +148,7 @@ function App() {
                 setConfig(settings);
                 setScenarios((await api(`${base}/demo/scenarios`)).scenarios);
                 const p = previous.current;
-                if (p) {
+                if (p && (!settings.liveOnly || p.mode === 'live')) {
                     try {
                         const c = await restore(p.id);
                         await refreshState(p.pack);
@@ -444,13 +445,15 @@ function App() {
                         </select>
                     </label>
                     <div className="mode-picker">
-                        <button
-                            className={mode === 'scripted' ? 'selected' : ''}
-                            disabled={busy || active}
-                            onClick={() => void begin(pack, principal, 'scripted')}
-                        >
-                            <Play size={13} /> Scripted rehearsal
-                        </button>
+                        {config && !config.liveOnly && (
+                            <button
+                                className={mode === 'scripted' ? 'selected' : ''}
+                                disabled={busy || active}
+                                onClick={() => void begin(pack, principal, 'scripted')}
+                            >
+                                <Play size={13} /> Scripted rehearsal
+                            </button>
+                        )}
                         <button
                             className={mode === 'live' ? 'selected' : ''}
                             disabled={busy || active}

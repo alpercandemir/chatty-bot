@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """Small, synthetic read-only smoke test. Requires an already running keyed backend."""
+import argparse
 import json
 import time
 import urllib.request
 import http.cookiejar
 
-base = "http://127.0.0.1:8080/api/v1"
+parser = argparse.ArgumentParser()
+parser.add_argument("--url", default="http://127.0.0.1:8080")
+args = parser.parse_args()
+base = args.url.rstrip("/") + "/api/v1"
 jar = http.cookiejar.CookieJar()
 client = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
 

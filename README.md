@@ -1,12 +1,14 @@
 # Chatty
 
+**Hosted demo:** [chatty.138.2.168.194.sslip.io](https://chatty.138.2.168.194.sslip.io) — Live AI with Gemini, synthetic data only.
+
 A local AI service assistant that reads business records, answers questions, and completes permitted tasks after the customer confirms the exact change.
 
 Chatty combines a customer chat with a presenter view of tool calls, retrieved evidence, proposals, and persisted outcomes. Two scenario packs demonstrate the same runtime: **Northstar Shop** for commerce support and **ClearSpace Cleaning** for service enquiries and callback intake.
 
 ![Chatty demo studio](docs/browser-verification-desktop.jpg)
 
-> Local prototype with synthetic business data. Live Gemini integration is verified, but live responses can take about a minute. This project is not production-ready; see [verification and limitations](#verification-and-limitations).
+> Public demo with synthetic business data. The hosted app uses Live AI only; live responses can take about a minute. This project is not production-ready; see [verification and limitations](#verification-and-limitations).
 
 ## Live Gemini demo
 
@@ -29,6 +31,8 @@ The [security and off-topic evaluation](docs/SECURITY_EVALUATION.md) covers 17 l
 | Shared studio | Customer selection, execution timeline, business-state inspection, saved run history, repeatable journeys, and failure simulation |
 
 Business systems are simulated. A support request is saved as **QUEUED**, and a callback request as **REQUESTED**. Neither connects a human, books a calendar appointment, sends an external message, nor moves money.
+
+The hosted demo runs alongside rparadise on the existing Oracle Always Free VM. Rehearsal is disabled in its UI and API. The Gemini key stays in the VM's private `.env` and is passed only to the backend. [Deployment and CI/CD](docs/DEPLOYMENT.md) explains hosting, rollback, and cost boundaries.
 
 ## Quick start
 
@@ -56,7 +60,7 @@ Set `JAVA_HOME` to your JDK 25 installation before running Maven. On Apple Silic
 
 This builds the backend, installs and builds the frontend, then starts both development services. Native development stores persistent simulator data in an H2 database under `data/`.
 
-Open [the studio](http://127.0.0.1:5173/). The backend runs on port **8080**.
+Open [the local studio](http://127.0.0.1:5173/). The backend runs on port **8080**.
 
 **Docker Compose**
 
@@ -68,7 +72,7 @@ docker compose up --build
 
 Open [the studio](http://localhost/). Compose uses PostgreSQL for persistence and Nginx for the frontend. Services bind to loopback; the database is stored in the `chatty-data` volume. Stop the stack with `docker compose down`.
 
-### 3. Choose a mode
+### 3. Choose a mode locally
 
 | Mode | Behaviour |
 | --- | --- |
@@ -160,6 +164,8 @@ Failure controls demonstrate an unavailable read with one retry, a write failure
 | `AI_MODEL` | `gemini-3.8-flash` | Selected model; no automatic model switch |
 | `AI_MODE` | `auto` | `auto`, `live`, or `scripted` |
 | `AI_MODEL_MAX_ROUNDS` | `6` | Maximum model requests per run; capped at six |
+| `AI_LIVE_ONLY` | `false` locally | Disables rehearsal in the UI and conversation API; enabled on the hosted demo |
+| `SECURE_COOKIES` | `false` locally | Adds Secure to session cookies; enabled for hosted HTTPS |
 | `DATABASE_URL` | Local H2 file | JDBC connection; Compose supplies PostgreSQL settings |
 | `DATABASE_USER`, `DATABASE_PASSWORD` | Local demo values | Database credentials |
 
@@ -208,11 +214,11 @@ Observed locally on **10 October 2026**:
 | Real Gemini tracking | Completed with 2 model requests and 2 tool calls |
 | Real Gemini address follow-up | Answered an address-policy clarification with an approved policy citation |
 | Browser persistence | Conversation and confirmed simulator state survived reload |
-| Docker Compose configuration | Validated; image startup and PostgreSQL execution remain unverified |
+| Docker Compose configuration (initial local check) | Validated; superseded by the PostgreSQL/container checks in deployment CI |
 
 The scripted score is not a live-model accuracy score. The PRD's full live evaluation target has not been achieved. Individual live browser turns took about 57–58 seconds of active time, so the original 15-second read target is not met. See the [evaluation report](docs/EVALUATION_REPORT.md), [tracking evidence](docs/evaluation/live-smoke.json), and [live conversation screenshot](docs/live-verification.jpg).
 
-This is a local, single-operator prototype. Public hosting, production customer authentication and real merchant connectors are outside its current scope. PostgreSQL migrations and full-text retrieval are implemented but have not been tested against a running PostgreSQL instance here. Further work includes complete typed domain/result contracts, dynamic pack onboarding and broader adversarial/live evaluation.
+The hosted version is a public synthetic-data demo, not a production customer service. Production customer authentication and real merchant connectors remain outside its scope. CI starts PostgreSQL, applies its migrations, and runs the 50-case HTTP evaluation before publishing deployable images. Further work includes complete typed domain/result contracts, dynamic pack onboarding and broader adversarial/live evaluation.
 
 ### Run the checks
 

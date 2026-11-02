@@ -23,6 +23,8 @@ chatty:
   key: ${GEMINI_API_KEY:}
   mode: ${AI_MODE:auto}
   rounds: ${AI_MODEL_MAX_ROUNDS:6}
+  live-only: ${AI_LIVE_ONLY:false}
+  secure-cookies: ${SECURE_COOKIES:false}
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

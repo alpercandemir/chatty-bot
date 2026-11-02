@@ -74,7 +74,7 @@ public class GeminiAdapter {
             throw new Problem(
                     503,
                     "GEMINI_KEY_MISSING",
-                    "Live AI needs GEMINI_API_KEY in the backend environment. Select Scripted rehearsal to run without a provider.");
+                    "Live AI needs GEMINI_API_KEY in the backend environment. Ask the demo operator to configure it.");
         }
         if (client == null) {
             client =
@@ -282,7 +282,7 @@ public class GeminiAdapter {
             return new Problem(
                     429,
                     "GEMINI_QUOTA_EXHAUSTED",
-                    "Gemini quota is exhausted. Wait for your project quota to reset, or explicitly select Scripted rehearsal. Saved actions are preserved.");
+                    "Gemini quota is exhausted. Wait for your project quota to reset. Saved actions are preserved.");
         }
         if (code == 401 || code == 403 || (code == 400 && message.contains("api key"))) {
             return new Problem(
@@ -306,12 +306,12 @@ public class GeminiAdapter {
             return new Problem(
                     503,
                     "GEMINI_TIMEOUT",
-                    "Gemini did not respond within 45 seconds. Check your connection or explicitly select rehearsal. Saved state is preserved.");
+                    "Gemini did not respond within 45 seconds. Check your connection and try again. Saved state is preserved.");
         }
         return new Problem(
                 503,
                 "GEMINI_UNAVAILABLE",
-                "Could not connect to Gemini. Check your connection or explicitly select rehearsal. Saved state is preserved.");
+                "Could not connect to Gemini. Check your connection and try again. Saved state is preserved.");
     }
 
     public void result(ObjectNode run, String tool, JsonNode result) {

@@ -48,6 +48,7 @@ public class ApiController {
     private final Knowledge knowledge;
     private final GeminiAdapter gemini;
     private final String defaultMode;
+    private final boolean liveOnly;
     private final List<ScenarioPack> packs;
     private final ExecutorService stream = Executors.newVirtualThreadPerTaskExecutor();
 
@@ -60,6 +61,7 @@ public class ApiController {
             Knowledge knowledge,
             GeminiAdapter gemini,
             @Value("${chatty.mode}") String mode,
+            @Value("${chatty.live-only:false}") boolean liveOnly,
             List<ScenarioPack> packs) {
         this.sessions = sessions;
         this.store = store;
@@ -68,7 +70,14 @@ public class ApiController {
         this.commerce = commerce;
         this.knowledge = knowledge;
         this.gemini = gemini;
-        defaultMode = mode.equals("auto") ? (gemini.configured() ? "live" : "scripted") : mode;
+        this.liveOnly = liveOnly;
+        if (liveOnly) {
+            defaultMode = "live";
+        } else if (mode.equals("auto")) {
+            defaultMode = gemini.configured() ? "live" : "scripted";
+        } else {
+            defaultMode = mode;
+        }
         this.packs = packs;
     }
 
@@ -114,6 +123,8 @@ public class ApiController {
                 gemini.configured(),
                 "defaultMode",
                 defaultMode,
+                "liveOnly",
+                liveOnly,
                 "principals",
                 store.seed.path("principals"),
                 "workspaces",
@@ -138,7 +149,13 @@ public class ApiController {
 
     @PostMapping("/api/v1/conversations")
     public JsonNode create(@RequestBody JsonNode body, HttpServletRequest request) {
-        return harness.create(sessions.customer(request), body.path("mode").asText(defaultMode));
+        var session = sessions.customer(request);
+        String mode = body.path("mode").asText(defaultMode);
+        if (liveOnly && !mode.equals("live")) {
+            throw new Problem(
+                    422, "LIVE_ONLY", "This demo uses Live AI. Start a live conversation.");
+        }
+        return harness.create(session, mode);
     }
 
     @GetMapping("/api/v1/conversations/{id}")

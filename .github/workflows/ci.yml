@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-24.04-arm
+    env:
+      CHATTY_BACKEND_IMAGE: chatty-bot-backend:ci
+      CHATTY_FRONTEND_IMAGE: chatty-bot-frontend:ci
+      DATABASE_PASSWORD: ci-database-not-a-secret
+      GEMINI_API_KEY: ci-placeholder-not-a-secret
+      PROXY_NETWORK: chatty-ci-proxy
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: mvn -f backend/pom.xml -B -ntp verify
+      - run: npm --prefix frontend ci
+      - run: npm --prefix frontend run build
+      - uses: docker/setup-buildx-action@v4
+      - name: Build ARM runtime images
+        run: |
+          docker buildx build --platform linux/arm64 --load -t "$CHATTY_BACKEND_IMAGE" -f backend/Dockerfile .
+          docker buildx build --platform linux/arm64 --load -t "$CHATTY_FRONTEND_IMAGE" frontend
+      - name: Verify PostgreSQL and the public HTTP workflows
+        run: |
+          docker network create "$PROXY_NETWORK"
+          docker compose -p chatty-ci -f compose.production.yaml -f compose.ci.yaml up -d --no-build --wait --wait-timeout 300
+          python3 scripts/evaluate.py --mode scripted --limit 50 --url http://127.0.0.1:8088 --output /tmp/chatty-ci-evaluation.json
+      - name: Runtime diagnostics
+        if: failure()
+        run: docker compose -p chatty-ci -f compose.production.yaml -f compose.ci.yaml logs --tail 100
+      - name: Clean up disposable CI database
+        if: always()
+        run: docker compose -p chatty-ci -f compose.production.yaml -f compose.ci.yaml down --volumes
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: ci
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        component: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.component == 'backend' && '.' || 'frontend' }}
+          file: ${{ matrix.component }}/Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: ghcr.io/alpercandemir/chatty-bot-${{ matrix.component }}:sha-${{ github.sha }}
+          labels: org.opencontainers.image.source=https://github.com/alpercandemir/chatty-bot
+          cache-from: type=gha,scope=${{ matrix.component }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.component }}

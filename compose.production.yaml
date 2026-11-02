@@ -1,0 +1,77 @@
+name: chatty-bot
+
+x-runtime: &runtime
+  restart: unless-stopped
+  security_opt: [no-new-privileges:true]
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: '3'
+
+services:
+  database:
+    <<: *runtime
+    image: postgres:17.7-alpine
+    mem_limit: 256m
+    cpus: 0.25
+    environment:
+      POSTGRES_DB: chatty
+      POSTGRES_USER: chatty
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD in the private server .env}
+    volumes: [chatty-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U chatty -d chatty]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    <<: *runtime
+    image: ${CHATTY_BACKEND_IMAGE:?Set the immutable backend image}
+    mem_limit: 768m
+    cpus: 0.75
+    environment:
+      DATABASE_URL: jdbc:postgresql://database:5432/chatty
+      DATABASE_USER: chatty
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD in the private server .env}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:?Set GEMINI_API_KEY in the private server .env}
+      AI_MODEL: ${AI_MODEL:-gemini-3.5-flash-lite}
+      AI_MODE: live
+      AI_LIVE_ONLY: 'true'
+      SECURE_COOKIES: 'true'
+      AI_MODEL_MAX_ROUNDS: ${AI_MODEL_MAX_ROUNDS:-6}
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx384m -XX:MaxMetaspaceSize=160m
+    depends_on:
+      database: { condition: service_healthy }
+    healthcheck:
+      test: [CMD-SHELL, 'curl -fsS http://localhost:8080/api/v1/health || exit 1']
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 30
+
+  frontend:
+    <<: *runtime
+    image: ${CHATTY_FRONTEND_IMAGE:?Set the immutable frontend image}
+    mem_limit: 64m
+    cpus: 0.15
+    depends_on:
+      backend: { condition: service_healthy }
+    networks:
+      default:
+      proxy:
+        aliases: [chatty]
+    healthcheck:
+      test: [CMD-SHELL, 'wget -q -O /dev/null http://127.0.0.1/api/v1/health || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  chatty-data:
+
+networks:
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:-rparadise-tracker_default}

@@ -1,0 +1,10 @@
+# CI uses the same PostgreSQL/runtime stack without a real provider credential.
+services:
+  backend:
+    environment:
+      GEMINI_API_KEY: ''
+      AI_MODE: scripted
+      AI_LIVE_ONLY: 'false'
+      SECURE_COOKIES: 'false'
+  frontend:
+    ports: [127.0.0.1:8088:80]

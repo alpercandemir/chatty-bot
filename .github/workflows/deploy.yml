@@ -1,0 +1,76 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_sha:
+        description: Full main-branch commit SHA to deploy, or an older published SHA to roll back
+        required: true
+        type: string
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.head_repository.full_name == github.repository))
+    runs-on: ubuntu-24.04
+    environment:
+      name: production
+      url: https://chatty.138.2.168.194.sslip.io
+    env:
+      IMAGE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.image_sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate deployment commit
+        run: |
+          [[ "$IMAGE_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git merge-base --is-ancestor "$IMAGE_SHA" origin/main
+          git checkout --detach "$IMAGE_SHA"
+      - name: Install SSH credentials
+        env:
+          SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' '138.2.168.194 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGqx2YJFhibyRhBYVvaAf8FRFSSCWFK6eowGC4jUgiXU' > ~/.ssh/known_hosts
+      - name: Copy versioned runtime configuration
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes ubuntu@138.2.168.194 "mkdir -p /home/ubuntu/chatty-bot/releases/$IMAGE_SHA/scripts"
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes compose.production.yaml "ubuntu@138.2.168.194:/home/ubuntu/chatty-bot/releases/$IMAGE_SHA/"
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes scripts/deploy.sh "ubuntu@138.2.168.194:/home/ubuntu/chatty-bot/releases/$IMAGE_SHA/scripts/"
+      - name: Deploy immutable images
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
+        run: |
+          printf '%s' "$REGISTRY_TOKEN" | ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes ubuntu@138.2.168.194 \
+            "bash /home/ubuntu/chatty-bot/releases/$IMAGE_SHA/scripts/deploy.sh '$IMAGE_SHA' '$REGISTRY_USER'"
+      - name: Verify public HTTPS
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors \
+            --resolve chatty.138.2.168.194.sslip.io:443:138.2.168.194 \
+            https://chatty.138.2.168.194.sslip.io/api/v1/health
+      - name: Remove runner SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

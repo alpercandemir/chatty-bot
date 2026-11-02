@@ -1,0 +1,13 @@
+# Append once to /home/ubuntu/rparadise-tracker/Caddyfile.
+# The existing Caddy container owns ports 80/443 and the HTTPS certificate store.
+chatty.138.2.168.194.sslip.io {
+	encode zstd gzip
+	log {
+		output stdout
+		format json
+	}
+	request_body {
+		max_size 64KB
+	}
+	reverse_proxy chatty:80
+}
