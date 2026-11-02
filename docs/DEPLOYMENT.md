@@ -43,7 +43,7 @@ Deployment paths:
 
 ## Proxy setup and operation
 
-[The Caddy fragment](../deploy/Caddyfile.chatty) is appended once to `/home/ubuntu/rparadise-tracker/Caddyfile`. Back up that file, preserve the other site blocks, validate the configuration inside the existing Caddy container, and reload Caddy. No replacement proxy or additional Oracle networking rule is required. Future edits to the shared Caddyfile must preserve every hosted site's block.
+[The Caddy fragment](../deploy/Caddyfile.chatty) is appended once to `/home/ubuntu/rparadise-tracker/Caddyfile`. Back up that file, preserve the other site blocks, validate the configuration inside the existing Caddy container, and reload Caddy. No additional proxy or Oracle networking rule is required. If a host-side edit replaces the file inode, the existing file bind mount can remain stale: recreate only the Caddy service with `docker compose -f compose.yaml -f compose.observability.yaml up -d --no-deps --force-recreate caddy`, then check the file inside the container and verify every site. Future edits to the shared Caddyfile must preserve every hosted site's block.
 
 For status and logs, after SSHing to the VM:
 
