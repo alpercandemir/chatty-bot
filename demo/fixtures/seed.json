@@ -1,5 +1,5 @@
 {
-  "fixtureVersion": "1.0.0",
+  "fixtureVersion": "1.1.0",
   "description": "Synthetic business facts for the planned Chatty simulator. Not an application or a running API.",
   "clock": {"strategy": "anchor_on_reset", "timezone": "Europe/Istanbul", "timestampUnit": "minutes_relative_to_reset"},
   "workspaces": [
@@ -7,14 +7,18 @@
     {"id": "demo-clearspace", "scenarioPack": "cleaning", "name": "ClearSpace Cleaning", "supportedAreas": ["Kadikoy", "Atasehir", "Umraniye"]}
   ],
   "principals": [
-    {"id": "customer-aylin", "workspaceId": "demo-northstar", "displayName": "Aylin Demo", "email": "aylin@example.invalid", "role": "customer"},
-    {"id": "customer-mert", "workspaceId": "demo-northstar", "displayName": "Mert Demo", "email": "mert@example.invalid", "role": "customer"},
+    {"id": "customer-aylin", "workspaceId": "demo-northstar", "displayName": "Aylin Demo", "email": "aylin@example.invalid", "role": "customer", "demoLabel": "Tracking & address changes", "demoSummary": "Track a delivery or update an address using the order references below."},
+    {"id": "customer-mert", "workspaceId": "demo-northstar", "displayName": "Mert Demo", "email": "mert@example.invalid", "role": "customer", "demoLabel": "Order cancellation", "demoSummary": "Try cancelling the speaker order. Review the details before confirming."},
     {"id": "prospect-office", "workspaceId": "demo-clearspace", "displayName": "Office Prospect Demo", "email": "office@example.invalid", "role": "prospect"},
-    {"id": "prospect-crm", "workspaceId": "demo-clearspace", "displayName": "Cleaning Company Demo", "email": "crm@example.invalid", "role": "prospect"}
+    {"id": "prospect-crm", "workspaceId": "demo-clearspace", "displayName": "Cleaning Company Demo", "email": "crm@example.invalid", "role": "prospect"},
+    {"id": "customer-deniz", "workspaceId": "demo-northstar", "displayName": "Deniz Demo", "email": "deniz@example.invalid", "role": "customer", "demoLabel": "Returns", "demoSummary": "Ask about returns for the delivered mouse, or request support."},
+    {"id": "customer-selin", "workspaceId": "demo-northstar", "displayName": "Selin Demo", "email": "selin@example.invalid", "role": "customer", "demoLabel": "Delivery issues", "demoSummary": "Check the delayed delivery or either package in the split shipment."}
   ],
   "addresses": [
     {"id": "address-aylin-home", "workspaceId": "demo-northstar", "principalId": "customer-aylin", "line1": "Demo Sokak 10, Daire 3", "district": "Kadikoy", "city": "Istanbul", "postalCode": "34000", "countryCode": "TR"},
-    {"id": "address-mert-home", "workspaceId": "demo-northstar", "principalId": "customer-mert", "line1": "Ornek Sokak 20, Daire 2", "district": "Atasehir", "city": "Istanbul", "postalCode": "34000", "countryCode": "TR"}
+    {"id": "address-mert-home", "workspaceId": "demo-northstar", "principalId": "customer-mert", "line1": "Ornek Sokak 20, Daire 2", "district": "Atasehir", "city": "Istanbul", "postalCode": "34000", "countryCode": "TR"},
+    {"id": "address-deniz-home", "workspaceId": "demo-northstar", "principalId": "customer-deniz", "line1": "Ornek Caddesi 12, Daire 4", "district": "Besiktas", "city": "Istanbul", "postalCode": "34000", "countryCode": "TR"},
+    {"id": "address-selin-home", "workspaceId": "demo-northstar", "principalId": "customer-selin", "line1": "Demo Sokak 8, Daire 1", "district": "Uskudar", "city": "Istanbul", "postalCode": "34000", "countryCode": "TR"}
   ],
   "orders": [
     {
@@ -64,7 +68,10 @@
       "fulfillmentLocked": false, "addressId": "address-aylin-home", "placedAtOffsetMinutes": -4320,
       "items": [{"sku": "DOCK-01", "name": "Demo Docking Station", "quantity": 1, "unitPriceMinor": 219900}],
       "totalMinor": 219900, "currency": "TRY", "paymentStatus": "PAID_SIMULATED", "refundStatus": "NOT_REQUESTED", "shipmentIds": ["SHIP-1008-A"]
-    }
+    },
+    {"id": "NS-1009", "workspaceId": "demo-northstar", "principalId": "customer-deniz", "status": "DELIVERED", "version": 1, "fulfillmentLocked": false, "addressId": "address-deniz-home", "placedAtOffsetMinutes": -7200, "items": [{"sku": "MOUSE-01", "name": "Demo Wireless Mouse", "quantity": 1, "unitPriceMinor": 79900}], "totalMinor": 79900, "currency": "TRY", "paymentStatus": "PAID_SIMULATED", "refundStatus": "NOT_REQUESTED", "shipmentIds": ["SHIP-1009-A"]},
+    {"id": "NS-1010", "workspaceId": "demo-northstar", "principalId": "customer-selin", "status": "SHIPPED", "version": 1, "fulfillmentLocked": false, "addressId": "address-selin-home", "placedAtOffsetMinutes": -4320, "items": [{"sku": "DOCK-01", "name": "Demo Docking Station", "quantity": 1, "unitPriceMinor": 219900}], "totalMinor": 219900, "currency": "TRY", "paymentStatus": "PAID_SIMULATED", "refundStatus": "NOT_REQUESTED", "shipmentIds": ["SHIP-1010-A"]},
+    {"id": "NS-1011", "workspaceId": "demo-northstar", "principalId": "customer-selin", "status": "PARTIALLY_SHIPPED", "version": 1, "fulfillmentLocked": false, "addressId": "address-selin-home", "placedAtOffsetMinutes": -2880, "items": [{"sku": "LAPTOP-STAND-01", "name": "Demo Laptop Stand", "quantity": 1, "unitPriceMinor": 99900}, {"sku": "USB-HUB-01", "name": "Demo USB Hub", "quantity": 1, "unitPriceMinor": 59900}], "totalMinor": 159800, "currency": "TRY", "paymentStatus": "PAID_SIMULATED", "refundStatus": "NOT_REQUESTED", "shipmentIds": ["SHIP-1011-A", "SHIP-1011-B"]}
   ],
   "shipments": [
     {
@@ -91,7 +98,11 @@
       "id": "SHIP-1008-A", "workspaceId": "demo-northstar", "orderId": "NS-1008", "status": "DELAYED",
       "carrier": "Demo Parcel", "trackingReference": "DEMO-TRACK-1008", "estimatedDeliveryOffsetMinutes": null, "itemSkus": ["DOCK-01"],
       "events": [{"status": "DISPATCHED", "occurredAtOffsetMinutes": -2880, "description": "Handed to the simulated carrier"}, {"status": "DELAYED", "occurredAtOffsetMinutes": -30, "description": "Carrier reported a delay; revised delivery estimate unavailable"}]
-    }
+    },
+    {"id": "SHIP-1009-A", "workspaceId": "demo-northstar", "orderId": "NS-1009", "status": "DELIVERED", "carrier": "Demo Parcel", "trackingReference": "DEMO-TRACK-1009", "estimatedDeliveryOffsetMinutes": null, "itemSkus": ["MOUSE-01"], "events": [{"status": "DISPATCHED", "occurredAtOffsetMinutes": -5760, "description": "Handed to the simulated carrier"}, {"status": "DELIVERED", "occurredAtOffsetMinutes": -2880, "description": "Delivery recorded by the simulated carrier"}]},
+    {"id": "SHIP-1010-A", "workspaceId": "demo-northstar", "orderId": "NS-1010", "status": "DELAYED", "carrier": "Demo Parcel", "trackingReference": "DEMO-TRACK-1010", "estimatedDeliveryOffsetMinutes": null, "itemSkus": ["DOCK-01"], "events": [{"status": "DISPATCHED", "occurredAtOffsetMinutes": -2880, "description": "Handed to the simulated carrier"}, {"status": "DELAYED", "occurredAtOffsetMinutes": -30, "description": "Carrier reported a delay; revised delivery estimate unavailable"}]},
+    {"id": "SHIP-1011-A", "workspaceId": "demo-northstar", "orderId": "NS-1011", "status": "IN_TRANSIT", "carrier": "Demo Parcel", "trackingReference": "DEMO-TRACK-1011-A", "estimatedDeliveryOffsetMinutes": 1440, "itemSkus": ["LAPTOP-STAND-01"], "events": [{"status": "DISPATCHED", "occurredAtOffsetMinutes": -1440, "description": "Handed to the simulated carrier"}, {"status": "IN_TRANSIT", "occurredAtOffsetMinutes": -120, "description": "In transit to the destination depot"}]},
+    {"id": "SHIP-1011-B", "workspaceId": "demo-northstar", "orderId": "NS-1011", "status": "AWAITING_DISPATCH", "carrier": null, "trackingReference": null, "estimatedDeliveryOffsetMinutes": null, "itemSkus": ["USB-HUB-01"], "events": [{"status": "AWAITING_DISPATCH", "occurredAtOffsetMinutes": -120, "description": "Second package awaiting dispatch"}]}
   ],
   "knowledgeArticles": [
     {"id": "NS-FAQ-CANCEL", "workspaceId": "demo-northstar", "version": 1, "title": "Demo cancellation policy", "content": "Whole-order cancellation is available only while an order is PROCESSING, no package has been dispatched, and fulfillment is not locked. Partial cancellation is not supported in this demo. Cancellation does not mean that a refund has completed."},

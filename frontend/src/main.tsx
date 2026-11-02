@@ -6,25 +6,18 @@ import {
     Check,
     ChevronDown,
     ChevronRight,
-    Circle,
     CircleCheck,
     Clock3,
     Code2,
-    Compass,
-    Database,
     ExternalLink,
     FileText,
-    Layers3,
-    Leaf,
     LoaderCircle,
     MessageCircle,
-    MoreHorizontal,
     Package,
     Play,
     Plus,
     RotateCcw,
     ShieldCheck,
-    Sparkles,
     Square,
     Terminal,
     TriangleAlert,
@@ -55,8 +48,10 @@ const saved = () => {
 };
 function App() {
     const previous = useRef(saved());
-    const [pack, setPack] = useState(previous.current?.pack || 'commerce');
-    const [principal, setPrincipal] = useState(previous.current?.principal || 'customer-aylin');
+    const pack = 'commerce';
+    const [principal, setPrincipal] = useState(
+        previous.current?.pack === 'commerce' ? previous.current.principal : 'customer-aylin',
+    );
     const [mode, setMode] = useState(previous.current?.mode || 'live');
     const [conv, setConv] = useState<J>(null);
     const [config, setConfig] = useState<J>(null);
@@ -65,20 +60,28 @@ function App() {
     const [input, setInput] = useState('');
     const [error, setError] = useState('');
     const [busy, setBusy] = useState(false);
-    const [panel, setPanel] = useState(true);
+    const [panel, setPanel] = useState(false);
     const [tab, setTab] = useState('flow');
     const [selected, setSelected] = useState('');
     const [journeyStep, setJourneyStep] = useState(0);
     const [expanded, setExpanded] = useState<number | null>(null);
     const [historyRun, setHistoryRun] = useState<J>(null);
     const bottom = useRef<HTMLDivElement>(null);
+    const inspector = useRef<HTMLElement>(null);
     const source = useRef<EventSource | null>(null);
     const init = useRef(false);
     const active = conv?.run && ['QUEUED', 'RUNNING'].includes(conv.run.status);
     const run = historyRun || conv?.run;
     const action = conv?.action;
     const proposal = action?.status === 'PROPOSED';
-    const brand = pack === 'commerce' ? 'Northstar Shop' : 'ClearSpace Cleaning';
+    const brand = 'Northstar Shop';
+    const customers: J[] = (config?.principals || []).filter(
+        (p: J) => p.workspaceId === 'demo-northstar',
+    );
+    const customer = customers.find((p: J) => p.id === principal);
+    const orders: J[] = (state?.orders || []).filter((o: J) => o.principalId === principal);
+    const processing = orders.find((o: J) => o.status === 'PROCESSING' && !o.fulfillmentLocked);
+    const shipped = orders.find((o: J) => o.shipmentIds.length > 0 && o.status !== 'DELIVERED');
     const refreshState = async (p = pack) => setState(await api(`${base}/demo/state?pack=${p}`));
     const restore = async (id: string) => {
         const c = await api(`${base}/conversations/${id}`);
@@ -116,13 +119,13 @@ function App() {
         setBusy(true);
         setError('');
         setHistoryRun(null);
+        setInput('');
         try {
             if (reset) {
                 await api(`${base}/demo/reset`, { pack: p });
             }
             await api(`${base}/demo/sessions`, { pack: p, principalId: who });
             const c = await api(`${base}/conversations`, { mode: m });
-            setPack(p);
             setPrincipal(who);
             setMode(m);
             setConv(c);
@@ -146,9 +149,13 @@ function App() {
             try {
                 const settings = await api(`${base}/demo/presenter`, {});
                 setConfig(settings);
-                setScenarios((await api(`${base}/demo/scenarios`)).scenarios);
+                setScenarios(
+                    (await api(`${base}/demo/scenarios`)).scenarios.filter(
+                        (s: J) => s.workspaceId === 'demo-northstar',
+                    ),
+                );
                 const p = previous.current;
-                if (p && (!settings.liveOnly || p.mode === 'live')) {
+                if (p?.pack === 'commerce' && (!settings.liveOnly || p.mode === 'live')) {
                     try {
                         const c = await restore(p.id);
                         await refreshState(p.pack);
@@ -170,6 +177,11 @@ function App() {
     useEffect(() => {
         bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }, [conv?.messages?.length, proposal]);
+    useEffect(() => {
+        if (panel) {
+            inspector.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, [panel]);
     const send = async (text = input) => {
         if (!text.trim() || !conv || busy || active) {
             return;
@@ -220,26 +232,16 @@ function App() {
             setError((e as Error).message);
         }
     };
-    const starters =
-        pack === 'commerce'
+    const starters = [
+        ...(shipped ? [['Track an order', `Where is order ${shipped.id}?`]] : []),
+        ...(processing
             ? [
-                  ['Track a delivery', 'Where is order NS-1002?'],
-                  ['Change an address', 'Change the delivery address for NS-1001.'],
-                  ['Cancel an order', 'Cancel order NS-1001.'],
-                  ['Explore our returns policy', 'What is your return policy?'],
+                  ['Change an address', `Change the delivery address for ${processing.id}.`],
+                  ['Cancel an order', `Cancel order ${processing.id}.`],
               ]
-            : [
-                  ['Explore service areas', 'Do you clean offices in Atasehir?'],
-                  [
-                      'Request office cleaning',
-                      'I need weekly cleaning for a 250 square meter office in Atasehir. Please contact office@example.invalid next weekday afternoon.',
-                  ],
-                  ['Explore the CRM', 'What does your cleaning CRM do?'],
-                  [
-                      'Request a CRM callback',
-                      'I run a cleaning company with 12 employees. I need help scheduling jobs and assigning employees. Can I request a CRM demo callback by email at crm@example.invalid next weekday morning?',
-                  ],
-              ];
+            : []),
+        ['Return policy', 'What is your return policy?'],
+    ];
     const journey = scenarios.find((s) => s.id === selected);
     const nextStep = async () => {
         const step = journey?.steps[journeyStep];
@@ -265,210 +267,50 @@ function App() {
     };
     return (
         <div className="app-shell">
-            <aside className="sidebar">
+            <header className="topbar">
                 <a className="logo" href="/" aria-label="Chatty home">
-                    <span className="logo-symbol">
-                        <MessageCircle size={23} />
-                        <i />
-                    </span>
-                    chatty<span className="logo-dot">.</span>
+                    chatty
                 </a>
-                <div className="workspace-label">
-                    YOUR WORKSPACE <span>LOCAL</span>
-                </div>
-                <button className="workspace" onClick={() => setTab('demo')}>
-                    <span className="workspace-icon">
-                        <Layers3 size={18} />
-                    </span>
-                    <span>
-                        Demo studio<small>Service assistant</small>
-                    </span>
-                    <ChevronDown size={15} />
-                </button>
-                <nav>
-                    <button className="nav-active" onClick={() => setHistoryRun(null)}>
-                        <MessageCircle size={18} /> Playground <span className="nav-pill">2</span>
-                    </button>
+                <span className="header-divider" />
+                <span className="demo-label">E-commerce demo</span>
+                <div className="top-right">
                     <button
-                        onClick={() => {
-                            setPanel(true);
-                            setTab('history');
-                        }}
-                    >
-                        <Clock3 size={18} /> Run history
-                    </button>
-                    <button
-                        onClick={() => {
-                            setPanel(true);
-                            setTab('state');
-                        }}
-                    >
-                        <Database size={18} /> Business data
-                    </button>
-                    <button
-                        onClick={() => {
-                            setPanel(true);
-                            setTab('demo');
-                        }}
-                    >
-                        <Compass size={18} /> Demo journeys
-                    </button>
-                </nav>
-                <div className="side-divider" />
-                <div className="workspace-label">SCENARIO PACKS</div>
-                <button
-                    className={`pack-button ${pack === 'commerce' ? 'chosen' : ''}`}
-                    onClick={() => void begin('commerce', 'customer-aylin', mode)}
-                    disabled={busy || active}
-                >
-                    <Package size={18} />
-                    <span>
-                        Commerce<small>Northstar Shop</small>
-                    </span>
-                    <span className="pack-dot" />
-                </button>
-                <button
-                    className={`pack-button ${pack === 'cleaning' ? 'chosen' : ''}`}
-                    onClick={() => void begin('cleaning', 'prospect-office', mode)}
-                    disabled={busy || active}
-                >
-                    <Leaf size={18} />
-                    <span>
-                        Cleaning services<small>ClearSpace Cleaning</small>
-                    </span>
-                    <span className="pack-dot" />
-                </button>
-                <div className="sidebar-bottom">
-                    <div className="sandbox-card">
-                        <ShieldCheck size={20} />
-                        <strong>A safe space to explore</strong>
-                        <p>
-                            Real workflows. Synthetic data.
-                            <br />
-                            Every change needs your say.
-                        </p>
-                        <button
-                            onClick={() => void begin(pack, principal, mode, true)}
-                            disabled={busy || active}
-                        >
-                            <RotateCcw size={14} /> Reset demo data
-                        </button>
-                    </div>
-                    <div className="operator">
-                        <div className="avatar">AD</div>
-                        <div>
-                            Demo operator<small>Local workspace</small>
-                        </div>
-                        <MoreHorizontal size={18} />
-                    </div>
-                </div>
-            </aside>
-            <main className="main">
-                <header className="topbar">
-                    <div className="breadcrumbs">
-                        Demo studio <ChevronRight size={13} />
-                        <strong>Playground</strong>
-                    </div>
-                    <div className="top-right">
-                        <span className="environment">
-                            <span /> Demo environment
-                        </span>
-                        <a href="/swagger-ui.html" target="_blank" rel="noreferrer">
-                            <Code2 size={16} /> API docs <ExternalLink size={12} />
-                        </a>
-                    </div>
-                </header>
-                <div className="page-heading">
-                    <div>
-                        <div className="eyebrow">THE ASSISTANT, IN ACTION</div>
-                        <h1>
-                            Good conversations.
-                            <br className="mobile-br" /> Real outcomes<span>.</span>
-                        </h1>
-                        <p>Try a customer journey, then see how the assistant gets there.</p>
-                    </div>
-                    <button
-                        className={`presenter-toggle ${panel ? 'on' : ''}`}
+                        className={panel ? 'selected' : ''}
+                        aria-expanded={panel}
+                        aria-controls="demo-inspector"
                         onClick={() => setPanel(!panel)}
                     >
-                        <Terminal size={15} /> Presenter mode{' '}
-                        <span className="switch">
-                            <i />
-                        </span>
+                        <Terminal size={15} /> Inspector
+                    </button>
+                    <a href="/swagger-ui.html" target="_blank" rel="noreferrer">
+                        <Code2 size={15} /> API docs <ExternalLink size={11} />
+                    </a>
+                </div>
+            </header>
+            <main className="main">
+                <div className="page-heading">
+                    <div>
+                        <h1>Customer support</h1>
+                        <p>Track orders, update delivery details, or request a cancellation.</p>
+                    </div>
+                    <button
+                        className="reset-button"
+                        onClick={() => void begin(pack, principal, mode, true)}
+                        disabled={busy || active}
+                    >
+                        <RotateCcw size={14} /> Reset demo
                     </button>
                 </div>
-                <section className="controls">
-                    <label>
-                        <span>Scenario</span>
-                        <select
-                            value={pack}
-                            disabled={busy || active}
-                            onChange={(e) =>
-                                void begin(
-                                    e.target.value,
-                                    e.target.value === 'commerce'
-                                        ? 'customer-aylin'
-                                        : 'prospect-office',
-                                    mode,
-                                )
-                            }
-                        >
-                            <option value="commerce">Northstar Shop · Commerce</option>
-                            <option value="cleaning">ClearSpace · Cleaning</option>
-                        </select>
-                    </label>
-                    <div className="control-line" />
-                    <label>
-                        <span>Demo customer</span>
-                        <select
-                            value={principal}
-                            disabled={busy || active}
-                            onChange={(e) => void begin(pack, e.target.value, mode)}
-                        >
-                            {(config?.principals || [])
-                                .filter(
-                                    (p: J) =>
-                                        p.workspaceId ===
-                                        (pack === 'commerce'
-                                            ? 'demo-northstar'
-                                            : 'demo-clearspace'),
-                                )
-                                .map((p: J) => (
-                                    <option key={p.id} value={p.id}>
-                                        {p.displayName}
-                                    </option>
-                                ))}
-                        </select>
-                    </label>
-                    <div className="mode-picker">
-                        {config && !config.liveOnly && (
-                            <button
-                                className={mode === 'scripted' ? 'selected' : ''}
-                                disabled={busy || active}
-                                onClick={() => void begin(pack, principal, 'scripted')}
-                            >
-                                <Play size={13} /> Scripted rehearsal
-                            </button>
-                        )}
-                        <button
-                            className={mode === 'live' ? 'selected' : ''}
-                            disabled={busy || active}
-                            onClick={() => void begin(pack, principal, 'live')}
-                        >
-                            <Sparkles size={13} /> Live AI
-                        </button>
-                    </div>
-                </section>
-                <div className={`studio ${panel ? 'with-panel' : ''}`}>
+                <div className="studio">
                     <section className="chat-card">
                         <div className="chat-header">
                             <div className="brand-mark">
-                                {pack === 'commerce' ? <Package size={24} /> : <Leaf size={24} />}
+                                <MessageCircle size={19} />
                             </div>
                             <div>
                                 <h2>{brand}</h2>
                                 <span>
-                                    <i /> Service assistant
+                                    Chatting as {customer?.displayName?.replace(' Demo', '') || '…'}
                                 </span>
                             </div>
                             <button
@@ -481,22 +323,11 @@ function App() {
                                 <Plus size={19} />
                             </button>
                         </div>
-                        <div className="simulated-strip">
-                            <ShieldCheck size={13} /> Demo environment — simulated business systems
-                        </div>
                         <div className="messages" aria-live="polite">
                             {!conv?.messages?.length ? (
                                 <div className="welcome">
-                                    <div className="welcome-icon">
-                                        <Sparkles size={27} />
-                                    </div>
-                                    <div className="eyebrow">A LITTLE HELP GOES A LONG WAY</div>
-                                    <h3>Hi there. How can I help?</h3>
-                                    <p>
-                                        {pack === 'commerce'
-                                            ? 'Let’s check on an order, make a change, or find an answer.'
-                                            : 'Let’s find the right cleaning service or explore our CRM.'}
-                                    </p>
+                                    <h3>Ask about an order</h3>
+                                    <p>Select a customer, then type a message or use an example.</p>
                                     <div className="starters">
                                         {starters.map(([label, prompt], i) => (
                                             <button
@@ -520,19 +351,6 @@ function App() {
                                             </button>
                                         ))}
                                     </div>
-                                    <div className="welcome-note">
-                                        {mode === 'live' ? (
-                                            <>
-                                                <Sparkles size={13} /> Ask naturally. Gemini uses
-                                                the business records to help.
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Play size={13} /> Scripted demo: use the sample
-                                                prompts, or switch to Live AI.
-                                            </>
-                                        )}
-                                    </div>
                                 </div>
                             ) : (
                                 <div className="thread">
@@ -540,7 +358,7 @@ function App() {
                                         <div className={`message ${m.role}`} key={m.id}>
                                             {m.role === 'assistant' && (
                                                 <div className="assistant-avatar">
-                                                    <Sparkles size={14} />
+                                                    <MessageCircle size={14} />
                                                 </div>
                                             )}
                                             <div>
@@ -733,7 +551,7 @@ function App() {
                                 rows={1}
                                 placeholder={
                                     mode === 'live'
-                                        ? 'Ask a question or tell me what you need…'
+                                        ? 'Message the assistant…'
                                         : 'Try a sample prompt · Switch to Live AI for conversation'
                                 }
                                 value={input}
@@ -761,452 +579,504 @@ function App() {
                                     </>
                                 ) : (
                                     <>
-                                        <Sparkles size={11} /> Live AI · {config?.model}
+                                        <MessageCircle size={11} /> Live AI
                                     </>
                                 )}
                             </span>
-                            <span>Powered by Chatty</span>
+                            <span>Changes require confirmation</span>
                         </div>
                     </section>
-                    {panel && (
-                        <aside className="presenter-panel">
-                            <div className="panel-heading">
-                                <span className="panel-icon">
-                                    <Terminal size={16} />
-                                </span>
-                                <div>
-                                    <h2>Behind the conversation</h2>
-                                    <p>A clear view of every step.</p>
-                                </div>
-                                <span className="live-dot">EVENTS</span>
+                    <aside className="customer-panel" aria-label="Demo customer details">
+                        <div className="context-heading">
+                            <h2>Demo customers</h2>
+                            <span>{customers.length}</span>
+                        </div>
+                        <div className="customer-list">
+                            {customers.map((p: J) => (
+                                <button
+                                    key={p.id}
+                                    className={`customer-option ${principal === p.id ? 'selected' : ''}`}
+                                    aria-pressed={principal === p.id}
+                                    disabled={busy || active || !conv}
+                                    onClick={() => void begin(pack, p.id, mode)}
+                                >
+                                    <span className="customer-initial">
+                                        {p.displayName.charAt(0)}
+                                    </span>
+                                    <span>
+                                        <strong>{p.displayName.replace(' Demo', '')}</strong>
+                                        <small>{p.demoLabel}</small>
+                                    </span>
+                                    {principal === p.id && <Check size={14} />}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="customer-summary">
+                            <h3>
+                                {customer?.displayName?.replace(' Demo', '') || 'Loading customer…'}
+                            </h3>
+                            <p>{customer?.email}</p>
+                            <p className="customer-note">{customer?.demoSummary}</p>
+                            <div className="section-label">
+                                Orders <span>{orders.length}</span>
                             </div>
-                            <div className="panel-tabs">
-                                {[
-                                    ['flow', 'Execution'],
-                                    ['state', 'Business state'],
-                                    ['demo', 'Journeys'],
-                                    ['history', 'History'],
-                                ].map(([id, label]) => (
-                                    <button
-                                        key={id}
-                                        className={tab === id ? 'active' : ''}
-                                        onClick={() => setTab(id)}
+                            <CustomerOrders
+                                orders={orders.slice(0, 3)}
+                                shipments={state?.shipments || []}
+                            />
+                            {orders.length > 3 && (
+                                <details className="more-orders">
+                                    <summary>{orders.length - 3} more orders</summary>
+                                    <CustomerOrders
+                                        orders={orders.slice(3)}
+                                        shipments={state?.shipments || []}
+                                    />
+                                </details>
+                            )}
+                        </div>
+                        <div className="context-footer">
+                            {config && !config.liveOnly && (
+                                <label className="mode-control">
+                                    Mode
+                                    <select
+                                        value={mode}
+                                        disabled={busy || active}
+                                        onChange={(e) =>
+                                            void begin(pack, principal, e.target.value)
+                                        }
                                     >
-                                        {label}
-                                    </button>
-                                ))}
+                                        <option value="live">Live AI</option>
+                                        <option value="scripted">Scripted rehearsal</option>
+                                    </select>
+                                </label>
+                            )}
+                            <span>Switching customers starts a new chat.</span>
+                        </div>
+                    </aside>
+                </div>
+                {panel && (
+                    <aside className="presenter-panel" id="demo-inspector" ref={inspector}>
+                        <div className="panel-heading">
+                            <span className="panel-icon">
+                                <Terminal size={16} />
+                            </span>
+                            <div>
+                                <h2>Inspector</h2>
                             </div>
-                            <div className="panel-body">
-                                {tab === 'flow' ? (
-                                    <>
-                                        <div className="flow-info">
-                                            <span>
-                                                <span className="tiny-dot" />
-                                                {run
-                                                    ? run.status.replaceAll('_', ' ')
-                                                    : 'Ready for a conversation'}
-                                            </span>
-                                            <small>
-                                                {run
-                                                    ? `${run.toolCalls} tools · ${run.activeMs || 0} ms`
-                                                    : 'Waiting for your first message'}
-                                            </small>
-                                        </div>
-                                        <div className="timeline">
-                                            {!run ? (
-                                                <>
-                                                    {[
-                                                        [
-                                                            'Understand the request',
-                                                            'Load the conversation and customer',
-                                                        ],
-                                                        [
-                                                            'Gather the facts',
-                                                            'Read authorized records and sources',
-                                                        ],
-                                                        [
-                                                            'Check the policy',
-                                                            'Validate the proposed business action',
-                                                        ],
-                                                        [
-                                                            'Ask for confirmation',
-                                                            'Let the customer review exact details',
-                                                        ],
-                                                        [
-                                                            'Execute & verify',
-                                                            'Persist the outcome, then report it',
-                                                        ],
-                                                    ].map(([title, desc], i) => (
-                                                        <div
-                                                            className="timeline-item dormant"
-                                                            key={title}
-                                                        >
-                                                            <span className="timeline-node">
-                                                                {i + 1}
-                                                            </span>
-                                                            <div>
-                                                                <h4>{title}</h4>
-                                                                <p>{desc}</p>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </>
-                                            ) : (
-                                                run.events?.map((e: J, i: number) => (
-                                                    <div
-                                                        className={`timeline-item ${e.type === 'error' ? 'failed' : ''}`}
-                                                        key={e.id}
-                                                    >
-                                                        <span className="timeline-node">
-                                                            {e.type === 'error' ? (
-                                                                <TriangleAlert size={13} />
-                                                            ) : e.type === 'confirmation' ? (
-                                                                <ShieldCheck size={13} />
-                                                            ) : (
-                                                                <Check size={13} />
-                                                            )}
-                                                        </span>
-                                                        <div>
-                                                            <button
-                                                                className="event-toggle"
-                                                                onClick={() =>
-                                                                    setExpanded(
-                                                                        expanded === i ? null : i,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <h4>{e.title}</h4>
-                                                                <ChevronDown size={13} />
-                                                            </button>
-                                                            <p>
-                                                                {new Date(e.at).toLocaleTimeString(
-                                                                    'en-GB',
-                                                                )}{' '}
-                                                                · {e.type}
-                                                            </p>
-                                                            {expanded === i && (
-                                                                <pre>
-                                                                    {JSON.stringify(
-                                                                        e.detail,
-                                                                        null,
-                                                                        2,
-                                                                    )}
-                                                                </pre>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
-                                        <div className="policy-note">
-                                            <ShieldCheck size={19} />
-                                            <div>
-                                                <strong>Permission is part of the process.</strong>
-                                                <p>
-                                                    The assistant can propose a change. Only your
-                                                    exact confirmation can execute it.
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="run-meta">
-                                            <div>
-                                                <span>Scenario pack</span>
-                                                <strong>
-                                                    {pack} <small>v1.0.0</small>
-                                                </strong>
-                                            </div>
-                                            <div>
-                                                <span>Model mode</span>
-                                                <strong>
-                                                    {mode === 'scripted'
-                                                        ? 'Scripted rehearsal'
-                                                        : 'Live Gemini'}
-                                                </strong>
-                                            </div>
-                                            <div>
-                                                <span>Policy & tool schema</span>
-                                                <strong>v1.0.0</strong>
-                                            </div>
-                                            <div>
-                                                <span>Provider usage</span>
-                                                <strong>
-                                                    {run?.usage?.totalTokenCount
-                                                        ? `${run.usage.totalTokenCount} tokens`
-                                                        : 'Not reported'}
-                                                </strong>
-                                            </div>
-                                            {run && (
-                                                <div>
-                                                    <span>Run reference</span>
-                                                    <code>{run.id.slice(0, 19)}</code>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </>
-                                ) : tab === 'state' ? (
-                                    <>
-                                        <div className="section-label">
-                                            PERSISTENT SIMULATOR RECORDS{' '}
-                                            <button
-                                                className="icon-button"
-                                                title="Refresh business state"
-                                                onClick={() => void refreshState()}
-                                            >
-                                                <RotateCcw size={13} />
-                                            </button>
-                                        </div>
-                                        {state?.orders?.map((o: J) => (
-                                            <details className="record" key={o.id}>
-                                                <summary>
-                                                    <Package size={15} />
-                                                    <strong>{o.id}</strong>
-                                                    <span
-                                                        className={`status ${o.status === 'CANCELLED' ? 'muted' : ''}`}
-                                                    >
-                                                        {o.status}
-                                                    </span>
-                                                    <small>v{o.version}</small>
-                                                </summary>
-                                                <p>{o.items.map((i: J) => i.name).join(', ')}</p>
-                                                <Address value={o.deliveryAddress} />
-                                                <div className="record-footer">
-                                                    <span>{o.refundStatus}</span>
-                                                    <button
-                                                        onClick={() =>
-                                                            void control(`orders/${o.id}/advance`)
-                                                        }
-                                                    >
-                                                        Advance to shipped
-                                                    </button>
-                                                </div>
-                                            </details>
-                                        ))}
-                                        {['supportTickets', 'callbackRequests', 'actions'].map(
-                                            (k) => (
-                                                <div key={k}>
-                                                    <h4 className="record-group">
-                                                        {k.replace(/([A-Z])/g, ' $1')}{' '}
-                                                        <span>{state?.[k]?.length || 0}</span>
-                                                    </h4>
-                                                    {state?.[k]?.map((r: J) => (
-                                                        <details className="record" key={r.id}>
-                                                            <summary>
-                                                                <FileText size={14} />
-                                                                <strong>{r.id.slice(0, 14)}</strong>
-                                                                <span className="status">
-                                                                    {r.status}
-                                                                </span>
-                                                            </summary>
-                                                            <pre>{JSON.stringify(r, null, 2)}</pre>
-                                                            {r.status === 'UNKNOWN' && (
-                                                                <button
-                                                                    className="primary"
-                                                                    onClick={() =>
-                                                                        void control(
-                                                                            `operations/${r.operationId}/reconcile?pack=${pack}`,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    Reconcile authoritative outcome
-                                                                </button>
-                                                            )}
-                                                        </details>
-                                                    ))}
-                                                </div>
-                                            ),
-                                        )}
-                                    </>
-                                ) : tab === 'history' ? (
-                                    <>
-                                        <div className="section-label">
-                                            SAVED RUNS · {state?.runs?.length || 0}
-                                        </div>
-                                        {state?.runs
-                                            ?.slice()
-                                            .reverse()
-                                            .map((r: J) => (
-                                                <button
-                                                    className="history-row"
-                                                    key={r.id}
-                                                    onClick={() => {
-                                                        setHistoryRun(r);
-                                                        setTab('flow');
-                                                    }}
+                            <button
+                                className="icon-button"
+                                aria-label="Close inspector"
+                                onClick={() => setPanel(false)}
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+                        <div className="panel-tabs">
+                            {[
+                                ['flow', 'Execution'],
+                                ['state', 'Business state'],
+                                ['demo', 'Journeys'],
+                                ['history', 'History'],
+                            ].map(([id, label]) => (
+                                <button
+                                    key={id}
+                                    className={tab === id ? 'active' : ''}
+                                    onClick={() => setTab(id)}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="panel-body">
+                            {tab === 'flow' ? (
+                                <>
+                                    <div className="flow-info">
+                                        <span>
+                                            <span className="tiny-dot" />
+                                            {run
+                                                ? run.status.replaceAll('_', ' ')
+                                                : 'Ready for a conversation'}
+                                        </span>
+                                        <small>
+                                            {run
+                                                ? `${run.toolCalls} tools · ${run.activeMs || 0} ms`
+                                                : 'Waiting for your first message'}
+                                        </small>
+                                    </div>
+                                    <div className="timeline">
+                                        {!run ? (
+                                            <p className="empty-hint">
+                                                Send a message to see tool calls and results.
+                                            </p>
+                                        ) : (
+                                            run.events?.map((e: J, i: number) => (
+                                                <div
+                                                    className={`timeline-item ${e.type === 'error' ? 'failed' : ''}`}
+                                                    key={e.id}
                                                 >
-                                                    <Clock3 size={16} />
+                                                    <span className="timeline-node">
+                                                        {e.type === 'error' ? (
+                                                            <TriangleAlert size={13} />
+                                                        ) : e.type === 'confirmation' ? (
+                                                            <ShieldCheck size={13} />
+                                                        ) : (
+                                                            <Check size={13} />
+                                                        )}
+                                                    </span>
                                                     <div>
-                                                        <strong>{r.status}</strong>
-                                                        <small>
-                                                            {new Date(r.createdAt).toLocaleString(
+                                                        <button
+                                                            className="event-toggle"
+                                                            onClick={() =>
+                                                                setExpanded(
+                                                                    expanded === i ? null : i,
+                                                                )
+                                                            }
+                                                        >
+                                                            <h4>{e.title}</h4>
+                                                            <ChevronDown size={13} />
+                                                        </button>
+                                                        <p>
+                                                            {new Date(e.at).toLocaleTimeString(
                                                                 'en-GB',
                                                             )}{' '}
-                                                            · {r.mode}
-                                                        </small>
-                                                        <code>{r.id.slice(0, 20)}</code>
+                                                            · {e.type}
+                                                        </p>
+                                                        {expanded === i && (
+                                                            <pre>
+                                                                {JSON.stringify(e.detail, null, 2)}
+                                                            </pre>
+                                                        )}
                                                     </div>
-                                                    <ChevronRight size={14} />
-                                                </button>
-                                            ))}
-                                        {!state?.runs?.length && (
-                                            <p className="empty-hint">
-                                                Your conversations will leave an inspectable trail
-                                                here.
-                                            </p>
+                                                </div>
+                                            ))
                                         )}
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="section-label">
-                                            16 REPEATABLE DEMO JOURNEYS
+                                    </div>
+                                    <div className="run-meta">
+                                        <div>
+                                            <span>Scenario pack</span>
+                                            <strong>
+                                                {pack} <small>v1.0.0</small>
+                                            </strong>
                                         </div>
-                                        <label className="journey-selector">
-                                            <span>Choose a journey</span>
-                                            <select
-                                                value={selected}
-                                                onChange={(e) => {
-                                                    setSelected(e.target.value);
-                                                    setJourneyStep(0);
-                                                }}
-                                            >
-                                                <option value="">Select a sample journey</option>
-                                                {scenarios.map((s) => (
-                                                    <option key={s.id} value={s.id}>
-                                                        {s.id.replaceAll('-', ' ')}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </label>
-                                        {journey && (
-                                            <div className="journey">
-                                                <p>
-                                                    Start with fresh fixtures, then walk through
-                                                    each step. Every confirmation is explicit.
-                                                </p>
-                                                <button
-                                                    className="primary"
-                                                    disabled={active || busy}
-                                                    onClick={() => {
-                                                        setJourneyStep(0);
-                                                        void begin(
-                                                            journey.workspaceId === 'demo-northstar'
-                                                                ? 'commerce'
-                                                                : 'cleaning',
-                                                            journey.principalId,
-                                                            mode,
-                                                            true,
-                                                        );
-                                                    }}
-                                                >
-                                                    <RotateCcw size={14} /> Prepare this journey
-                                                </button>
-                                                {journey.steps.map((s: J, i: number) => (
-                                                    <div
-                                                        className={`journey-step ${i < journeyStep ? 'done' : ''}`}
-                                                        key={i}
-                                                    >
-                                                        <span>
-                                                            {i < journeyStep ? (
-                                                                <Check size={12} />
-                                                            ) : (
-                                                                i + 1
-                                                            )}
-                                                        </span>
-                                                        {s.message ||
-                                                            s.uiAction
-                                                                ?.replaceAll('_', ' ')
-                                                                .toLowerCase() ||
-                                                            s.presenterAction
-                                                                ?.replaceAll('_', ' ')
-                                                                .toLowerCase()}
-                                                    </div>
-                                                ))}
-                                                <button
-                                                    className="primary"
-                                                    disabled={
-                                                        busy ||
-                                                        active ||
-                                                        journeyStep >= journey.steps.length ||
-                                                        pack !==
-                                                            (journey.workspaceId ===
-                                                            'demo-northstar'
-                                                                ? 'commerce'
-                                                                : 'cleaning')
-                                                    }
-                                                    onClick={() => void nextStep()}
-                                                >
-                                                    <Play size={13} />
-                                                    {journeyStep >= journey.steps.length
-                                                        ? 'Journey complete'
-                                                        : 'Run next step'}
-                                                </button>
-                                                <details>
-                                                    <summary>Expected outcome</summary>
-                                                    <pre>
-                                                        {JSON.stringify(journey.expected, null, 2)}
-                                                    </pre>
-                                                </details>
+                                        <div>
+                                            <span>Model mode</span>
+                                            <strong>
+                                                {mode === 'scripted'
+                                                    ? 'Scripted rehearsal'
+                                                    : 'Live Gemini'}
+                                            </strong>
+                                        </div>
+                                        <div>
+                                            <span>Policy & tool schema</span>
+                                            <strong>v1.0.0</strong>
+                                        </div>
+                                        <div>
+                                            <span>Provider usage</span>
+                                            <strong>
+                                                {run?.usage?.totalTokenCount
+                                                    ? `${run.usage.totalTokenCount} tokens`
+                                                    : 'Not reported'}
+                                            </strong>
+                                        </div>
+                                        {run && (
+                                            <div>
+                                                <span>Run reference</span>
+                                                <code>{run.id.slice(0, 19)}</code>
                                             </div>
                                         )}
-                                        <h4 className="record-group">Failure controls</h4>
-                                        <p className="empty-hint">
-                                            Apply to the next call for NS-1001 (writes) or NS-1002
-                                            (reads).
-                                        </p>
-                                        {[
-                                            [
-                                                'READ_TIMEOUT',
-                                                'Read unavailable (with retry)',
-                                                'NS-1002',
-                                                2,
-                                            ],
-                                            [
-                                                'WRITE_FAILURE_BEFORE_COMMIT',
-                                                'Write fails before commit',
-                                                'NS-1001',
-                                                1,
-                                            ],
-                                            [
-                                                'WRITE_TIMEOUT_AFTER_COMMIT',
-                                                'Response lost after commit',
-                                                'NS-1001',
-                                                1,
-                                            ],
-                                        ].map(([fault, label, orderId, occurrences]) => (
+                                    </div>
+                                </>
+                            ) : tab === 'state' ? (
+                                <>
+                                    <div className="section-label">
+                                        PERSISTENT SIMULATOR RECORDS{' '}
+                                        <button
+                                            className="icon-button"
+                                            title="Refresh business state"
+                                            onClick={() => void refreshState()}
+                                        >
+                                            <RotateCcw size={13} />
+                                        </button>
+                                    </div>
+                                    {state?.orders?.map((o: J) => (
+                                        <details className="record" key={o.id}>
+                                            <summary>
+                                                <Package size={15} />
+                                                <strong>{o.id}</strong>
+                                                <span
+                                                    className={`status ${o.status === 'CANCELLED' ? 'muted' : ''}`}
+                                                >
+                                                    {o.status}
+                                                </span>
+                                                <small>v{o.version}</small>
+                                            </summary>
+                                            <p>{o.items.map((i: J) => i.name).join(', ')}</p>
+                                            <Address value={o.deliveryAddress} />
+                                            <div className="record-footer">
+                                                <span>{o.refundStatus}</span>
+                                                <button
+                                                    onClick={() =>
+                                                        void control(`orders/${o.id}/advance`)
+                                                    }
+                                                >
+                                                    Advance to shipped
+                                                </button>
+                                            </div>
+                                        </details>
+                                    ))}
+                                    {['supportTickets', 'actions'].map((k) => (
+                                        <div key={k}>
+                                            <h4 className="record-group">
+                                                {k.replace(/([A-Z])/g, ' $1')}{' '}
+                                                <span>{state?.[k]?.length || 0}</span>
+                                            </h4>
+                                            {state?.[k]?.map((r: J) => (
+                                                <details className="record" key={r.id}>
+                                                    <summary>
+                                                        <FileText size={14} />
+                                                        <strong>{r.id.slice(0, 14)}</strong>
+                                                        <span className="status">{r.status}</span>
+                                                    </summary>
+                                                    <pre>{JSON.stringify(r, null, 2)}</pre>
+                                                    {r.status === 'UNKNOWN' && (
+                                                        <button
+                                                            className="primary"
+                                                            onClick={() =>
+                                                                void control(
+                                                                    `operations/${r.operationId}/reconcile?pack=${pack}`,
+                                                                )
+                                                            }
+                                                        >
+                                                            Reconcile authoritative outcome
+                                                        </button>
+                                                    )}
+                                                </details>
+                                            ))}
+                                        </div>
+                                    ))}
+                                </>
+                            ) : tab === 'history' ? (
+                                <>
+                                    <div className="section-label">
+                                        SAVED RUNS · {state?.runs?.length || 0}
+                                    </div>
+                                    {state?.runs
+                                        ?.slice()
+                                        .reverse()
+                                        .map((r: J) => (
                                             <button
-                                                className="fault-button"
-                                                key={String(fault)}
-                                                disabled={pack !== 'commerce'}
-                                                onClick={() =>
-                                                    void control('faults', {
-                                                        fault,
-                                                        orderId,
-                                                        occurrences,
-                                                        pack,
-                                                    })
-                                                }
+                                                className="history-row"
+                                                key={r.id}
+                                                onClick={() => {
+                                                    setHistoryRun(r);
+                                                    setTab('flow');
+                                                }}
                                             >
-                                                <TriangleAlert size={14} />
-                                                {label}
-                                                <Plus size={13} />
+                                                <Clock3 size={16} />
+                                                <div>
+                                                    <strong>{r.status}</strong>
+                                                    <small>
+                                                        {new Date(r.createdAt).toLocaleString(
+                                                            'en-GB',
+                                                        )}{' '}
+                                                        · {r.mode}
+                                                    </small>
+                                                    <code>{r.id.slice(0, 20)}</code>
+                                                </div>
+                                                <ChevronRight size={14} />
                                             </button>
                                         ))}
-                                    </>
-                                )}
-                            </div>
-                            <div className="panel-footer">
-                                <CircleCheck size={13} /> Application events. No hidden model
-                                reasoning.
-                            </div>
-                        </aside>
-                    )}
-                </div>
+                                    {!state?.runs?.length && (
+                                        <p className="empty-hint">No saved runs yet.</p>
+                                    )}
+                                </>
+                            ) : (
+                                <>
+                                    <div className="section-label">
+                                        {scenarios.length} DEMO JOURNEYS
+                                    </div>
+                                    <label className="journey-selector">
+                                        <span>Choose a journey</span>
+                                        <select
+                                            value={selected}
+                                            onChange={(e) => {
+                                                setSelected(e.target.value);
+                                                setJourneyStep(0);
+                                            }}
+                                        >
+                                            <option value="">Select a sample journey</option>
+                                            {scenarios.map((s) => (
+                                                <option key={s.id} value={s.id}>
+                                                    {s.id.replaceAll('-', ' ')}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </label>
+                                    {journey && (
+                                        <div className="journey">
+                                            <p>
+                                                Start with fresh fixtures, then walk through each
+                                                step. Every confirmation is explicit.
+                                            </p>
+                                            <button
+                                                className="primary"
+                                                disabled={active || busy}
+                                                onClick={() => {
+                                                    setJourneyStep(0);
+                                                    void begin(
+                                                        pack,
+                                                        journey.principalId,
+                                                        mode,
+                                                        true,
+                                                    );
+                                                }}
+                                            >
+                                                <RotateCcw size={14} /> Prepare this journey
+                                            </button>
+                                            {journey.steps.map((s: J, i: number) => (
+                                                <div
+                                                    className={`journey-step ${i < journeyStep ? 'done' : ''}`}
+                                                    key={i}
+                                                >
+                                                    <span>
+                                                        {i < journeyStep ? (
+                                                            <Check size={12} />
+                                                        ) : (
+                                                            i + 1
+                                                        )}
+                                                    </span>
+                                                    {s.message ||
+                                                        s.uiAction
+                                                            ?.replaceAll('_', ' ')
+                                                            .toLowerCase() ||
+                                                        s.presenterAction
+                                                            ?.replaceAll('_', ' ')
+                                                            .toLowerCase()}
+                                                </div>
+                                            ))}
+                                            <button
+                                                className="primary"
+                                                disabled={
+                                                    busy ||
+                                                    active ||
+                                                    journeyStep >= journey.steps.length ||
+                                                    principal !== journey.principalId
+                                                }
+                                                onClick={() => void nextStep()}
+                                            >
+                                                <Play size={13} />
+                                                {journeyStep >= journey.steps.length
+                                                    ? 'Journey complete'
+                                                    : 'Run next step'}
+                                            </button>
+                                            <details>
+                                                <summary>Expected outcome</summary>
+                                                <pre>
+                                                    {JSON.stringify(journey.expected, null, 2)}
+                                                </pre>
+                                            </details>
+                                        </div>
+                                    )}
+                                    <h4 className="record-group">Failure controls</h4>
+                                    <p className="empty-hint">
+                                        Apply to the next call for NS-1001 (writes) or NS-1002
+                                        (reads).
+                                    </p>
+                                    {[
+                                        [
+                                            'READ_TIMEOUT',
+                                            'Read unavailable (with retry)',
+                                            'NS-1002',
+                                            2,
+                                        ],
+                                        [
+                                            'WRITE_FAILURE_BEFORE_COMMIT',
+                                            'Write fails before commit',
+                                            'NS-1001',
+                                            1,
+                                        ],
+                                        [
+                                            'WRITE_TIMEOUT_AFTER_COMMIT',
+                                            'Response lost after commit',
+                                            'NS-1001',
+                                            1,
+                                        ],
+                                    ].map(([fault, label, orderId, occurrences]) => (
+                                        <button
+                                            className="fault-button"
+                                            key={String(fault)}
+                                            disabled={pack !== 'commerce'}
+                                            onClick={() =>
+                                                void control('faults', {
+                                                    fault,
+                                                    orderId,
+                                                    occurrences,
+                                                    pack,
+                                                })
+                                            }
+                                        >
+                                            <TriangleAlert size={14} />
+                                            {label}
+                                            <Plus size={13} />
+                                        </button>
+                                    ))}
+                                </>
+                            )}
+                        </div>
+                        <div className="panel-footer">
+                            <CircleCheck size={13} /> Application events. No hidden model reasoning.
+                        </div>
+                    </aside>
+                )}
                 <footer className="page-footer">
-                    <span>
-                        <span className="tiny-dot" /> Local workspace · Synthetic data only
-                    </span>
-                    <span>Built for conversations that get things done.</span>
+                    Synthetic customer data · No real orders or payments
                 </footer>
             </main>
+        </div>
+    );
+}
+function CustomerOrders({ orders, shipments }: { orders: J[]; shipments: J[] }) {
+    return (
+        <div className="customer-orders">
+            {orders.map((o: J) => {
+                const shipment =
+                    shipments.find((s: J) => s.orderId === o.id && s.status === 'DELAYED') ||
+                    shipments.find((s: J) => s.orderId === o.id);
+                const status =
+                    shipment?.status === 'DELAYED'
+                        ? 'Delayed'
+                        : o.status.toLowerCase().replaceAll('_', ' ');
+                return (
+                    <div className="order-summary" key={o.id}>
+                        <div>
+                            <strong>{o.id}</strong>
+                            <span
+                                className={`order-status ${o.status === 'CANCELLED' ? 'muted' : ''}`}
+                            >
+                                {status}
+                            </span>
+                        </div>
+                        <p>{o.items.map((i: J) => i.name.replace('Demo ', '')).join(', ')}</p>
+                        <small>
+                            {o.deliveryAddress.district}, {o.deliveryAddress.city}
+                        </small>
+                        {o.status === 'PROCESSING' && (
+                            <small>
+                                {o.fulfillmentLocked
+                                    ? 'Preparing for dispatch; changes locked.'
+                                    : 'Address changes and cancellation available.'}
+                            </small>
+                        )}
+                        {shipment?.status === 'DELAYED' && (
+                            <small>Carrier delay; no revised delivery date.</small>
+                        )}
+                        {o.status === 'PARTIALLY_SHIPPED' && (
+                            <small>One package in transit; one awaiting dispatch.</small>
+                        )}
+                        {o.status === 'CANCELLED' && <small>Refund follow-up pending.</small>}
+                    </div>
+                );
+            })}
         </div>
     );
 }

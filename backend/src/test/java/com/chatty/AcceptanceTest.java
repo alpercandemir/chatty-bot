@@ -41,6 +41,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 @SpringBootTest(
@@ -95,6 +96,67 @@ class AcceptanceTest {
 
     ObjectNode state(Journey j) {
         return store.read(j.workspace, ObjectNode::deepCopy);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"customer-deniz", "customer-selin"})
+    void newDemoCustomersCanTrackTheirOwnOrders(String principal) throws Exception {
+        Journey j = journey("commerce", principal);
+        String order = principal.equals("customer-deniz") ? "NS-1009" : "NS-1010";
+
+        ObjectNode answer = say(j, "Where is order " + order + "?");
+
+        assertThat(answer.path("messages").toString()).contains(order);
+        assertThat(str(answer.path("run"), "status")).isEqualTo("COMPLETED");
+        assertThat(say(j, "Where is order NS-1001?").path("messages").toString())
+                .doesNotContain("Demo Wireless Headphones", "Demo Sokak 10");
+    }
+
+    @Test
+    void fixtureUpgradeAddsCustomersWithoutResettingExistingWork() throws Exception {
+        Journey j = journey("commerce", "customer-aylin");
+        String action = str(say(j, "Cancel order NS-1001.").path("action"), "id");
+        actions.decide(j.session, action, true);
+        store.change(
+                j.workspace,
+                s -> {
+                    s.put("fixtureVersion", "1.0.0");
+                    for (String collection : List.of("principals", "orders", "shipments")) {
+                        ArrayNode oldRecords = s.putArray(collection + "-old");
+                        for (JsonNode record : s.path(collection)) {
+                            String recordId = str(record, "id");
+                            boolean addedRecord =
+                                    recordId.contains("deniz")
+                                            || recordId.contains("selin")
+                                            || recordId.contains("1009")
+                                            || recordId.contains("1010")
+                                            || recordId.contains("1011");
+                            if (!addedRecord) {
+                                oldRecords.add(record.deepCopy());
+                            }
+                        }
+                        s.set(collection, s.remove(collection + "-old"));
+                    }
+                    return null;
+                });
+
+        store.ensure(j.workspace, "commerce");
+        store.ensure(j.workspace, "commerce");
+
+        ObjectNode upgraded = state(j);
+        assertThat(str(upgraded, "generation")).isEqualTo(j.session.generation());
+        assertThat(str(upgraded, "fixtureVersion")).isEqualTo("1.1.0");
+        assertThat(str(find(upgraded.path("orders"), "NS-1001"), "status")).isEqualTo("CANCELLED");
+        assertThat(upgraded.path("orders")).hasSize(11);
+        assertThat(upgraded.path("principals")).hasSize(4);
+        assertThat(upgraded.path("shipments")).hasSize(9);
+        assertThat(harness.snapshot(j.session, j.conversation).path("messages")).isNotEmpty();
+        assertThat(
+                        find(upgraded.path("orders"), "NS-1009")
+                                .path("deliveryAddress")
+                                .path("district")
+                                .asText())
+                .isEqualTo("Besiktas");
     }
 
     @ParameterizedTest(name = "supplied journey {0}")
