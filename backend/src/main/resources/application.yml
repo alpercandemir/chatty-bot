@@ -25,6 +25,7 @@ chatty:
   rounds: ${AI_MODEL_MAX_ROUNDS:6}
   live-only: ${AI_LIVE_ONLY:false}
   secure-cookies: ${SECURE_COOKIES:false}
+  public-origin: ${PUBLIC_ORIGIN:}
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

@@ -3,6 +3,7 @@ package com.chatty;
 import static com.chatty.store.Json.parse;
 import static com.chatty.store.Json.str;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -21,11 +22,44 @@ import org.springframework.test.web.servlet.MockMvc;
             "chatty.mode=scripted",
             "chatty.live-only=true",
             "chatty.secure-cookies=true",
+            "chatty.public-origin=https://chatty.138.2.168.194.sslip.io",
         })
 @AutoConfigureMockMvc
 class HostedDemoTest {
 
     @Autowired MockMvc mvc;
+
+    @Test
+    void configuredPublicOriginIsAllowedWhileUnknownHostsAndOriginsRemainBlocked()
+            throws Exception {
+        String host = "chatty.138.2.168.194.sslip.io";
+        mvc.perform(
+                        post("/api/v1/demo/presenter")
+                                .with(
+                                        request -> {
+                                            request.setServerName(host);
+                                            return request;
+                                        })
+                                .header("Origin", "https://" + host))
+                .andExpect(status().isOk());
+        mvc.perform(
+                        post("/api/v1/demo/presenter")
+                                .with(
+                                        request -> {
+                                            request.setServerName(host);
+                                            return request;
+                                        })
+                                .header("Origin", "https://" + host + ".evil.example"))
+                .andExpect(status().isForbidden());
+        mvc.perform(
+                        get("/api/v1/health")
+                                .with(
+                                        request -> {
+                                            request.setServerName("unconfigured.example");
+                                            return request;
+                                        }))
+                .andExpect(status().isForbidden());
+    }
 
     @Test
     void hostedDemoUsesSecureSessionsAndRejectsRehearsalEvenWhenRequestedDirectly()

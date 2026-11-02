@@ -16,7 +16,7 @@ Gemini usage is separate from Oracle hosting. The existing Gemini key and select
 
 The server file `/home/ubuntu/chatty-bot/.env` is owned by `ubuntu`, mode **600**, in a mode **700** directory. Use [the placeholder configuration](../deploy/production.env.example) as its schema. The Gemini key is supplied only to the backend container. The database password is independently generated and supplied to the backend and Chatty's database.
 
-The hosted Compose configuration forces `AI_MODE=live`, `AI_LIVE_ONLY=true`, and `SECURE_COOKIES=true`. Rehearsal is absent from the hosted mode selector and requests to create scripted conversations are rejected. Local development and CI retain deterministic fixtures for testing. Provider failures remain explicit and do not fall back to rehearsal.
+The hosted Compose configuration forces `AI_MODE=live`, `AI_LIVE_ONLY=true`, and `SECURE_COOKIES=true`. The request boundary explicitly allows only the configured `PUBLIC_ORIGIN=https://chatty.138.2.168.194.sslip.io` alongside loopback health/development traffic; unknown hosts and cross-site origins stay blocked. Rehearsal is absent from the hosted mode selector and requests to create scripted conversations are rejected. Local development and CI retain deterministic fixtures for testing. Provider failures remain explicit and do not fall back to rehearsal.
 
 `.env`, local deployment keys, and build outputs are Git-ignored and excluded from image build contexts. Real credentials must never be added to workflows, Dockerfiles, frontend variables, or this documentation. Do not print `docker compose config` or full container inspection output: resolved environments contain secrets. Use `config --quiet` for validation.
 

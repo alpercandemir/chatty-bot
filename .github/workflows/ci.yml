@@ -43,6 +43,7 @@ jobs:
         run: |
           docker network create "$PROXY_NETWORK"
           docker compose -p chatty-ci -f compose.production.yaml -f compose.ci.yaml up -d --no-build --wait --wait-timeout 300
+          curl --fail --silent --show-error -H 'Host: chatty.138.2.168.194.sslip.io' -H 'Origin: https://chatty.138.2.168.194.sslip.io' http://127.0.0.1:8088/api/v1/health
           python3 scripts/evaluate.py --mode scripted --limit 50 --url http://127.0.0.1:8088 --output /tmp/chatty-ci-evaluation.json
       - name: Runtime diagnostics
         if: failure()
