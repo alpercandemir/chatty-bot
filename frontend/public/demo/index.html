@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="color-scheme" content="dark" />
+        <title>Chatty · Demo video</title>
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                padding: 24px;
+                background: #18181b;
+                color: #e4e4e7;
+                font:
+                    14px system-ui,
+                    sans-serif;
+            }
+            main {
+                max-width: 1280px;
+                margin: 0 auto;
+            }
+            video {
+                display: block;
+                width: 100%;
+                max-height: calc(100dvh - 90px);
+                background: #09090b;
+            }
+            footer {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-between;
+                gap: 12px;
+                padding-top: 16px;
+                font-size: 12px;
+                color: #a1a1aa;
+            }
+            a {
+                color: #e4e4e7;
+            }
+            @media (max-width: 600px) {
+                body {
+                    padding: 12px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <main>
+            <video controls playsinline preload="metadata" aria-label="Chatty commerce demo">
+                <source src="./chatty-commerce-demo.mp4" type="video/mp4" />
+                <a href="./chatty-commerce-demo.mp4">Download the demo video</a>
+            </video>
+            <footer>
+                <span>Live AI · Edited waiting times · Synthetic data</span>
+                <a href="/">Open the demo</a>
+            </footer>
+        </main>
+    </body>
+</html>

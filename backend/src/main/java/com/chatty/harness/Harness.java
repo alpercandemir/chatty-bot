@@ -616,6 +616,9 @@ public class Harness {
                 processing.session().workspace(),
                 state -> {
                     ObjectNode current = find(state.path("runs"), processing.runId());
+                    if (!str(current, "status").equals("RUNNING")) {
+                        return true;
+                    }
                     ObjectNode conversation =
                             find(state.path("conversations"), processing.conversationId());
                     current.withArray("outputs")
@@ -629,7 +632,8 @@ public class Harness {
                                     System.nanoTime() - processing.startedNanos()));
                     current.put("updatedAt", Instant.now().toString());
                     current.put("responseOrigin", "BACKEND");
-                    if (str(current, "status").equals("WAITING_FOR_CONFIRMATION")) {
+                    // Publish the pause and its chat preview in the same transaction.
+                    if (output.has("action")) {
                         reply(
                                 conversation,
                                 current,
@@ -641,7 +645,6 @@ public class Harness {
                         return resolveToolFailure(processing, conversation, current, output);
                     }
                     if (output.has("policyCode")
-                            || output.has("action")
                             || (output.has("sources") && output.path("sources").isEmpty())) {
                         reply(conversation, current, str(output, "message"), "COMPLETED");
                         return true;

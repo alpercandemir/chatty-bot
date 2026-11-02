@@ -25,8 +25,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -739,6 +741,50 @@ class AcceptanceTest {
         assertThat(str(answer, "responseOrigin")).isEqualTo("MODEL");
         assertThat(str(answer.path("sources").get(0), "id")).isEqualTo("NS-FAQ-RETURNS");
         assertThat(str(c.path("run"), "status")).isEqualTo("COMPLETED");
+    }
+
+    @Test
+    void confirmationStatusIsPublishedTogetherWithThePreviewMessage() throws Exception {
+        Journey j = liveJourney(journey("commerce", "customer-aylin"));
+        CountDownLatch recordingOutput = new CountDownLatch(1);
+        CountDownLatch releaseOutput = new CountDownLatch(1);
+        GeminiAdapter model =
+                new GeminiAdapter("fixture", "fixture") {
+                    @Override
+                    public Decision next(ScenarioPack p, ObjectNode c, ObjectNode r) {
+                        return Decision.call("prepare_cancellation", obj("orderId", "NS-1001"));
+                    }
+
+                    @Override
+                    public void result(ObjectNode r, String tool, JsonNode result) {
+                        recordingOutput.countDown();
+                        try {
+                            if (!releaseOutput.await(5, TimeUnit.SECONDS)) {
+                                throw new AssertionError("Output recording was not released");
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new AssertionError(e);
+                        }
+                    }
+                };
+        new Harness(store, model, List.of(pack), 6)
+                .message(j.session, j.conversation, "Cancel NS-1001", id("client"));
+        try {
+            assertThat(recordingOutput.await(5, TimeUnit.SECONDS)).isTrue();
+            ObjectNode committed = state(j);
+            JsonNode conversation = find(committed.path("conversations"), j.conversation);
+            JsonNode run = find(committed.path("runs"), str(conversation, "runId"));
+            assertThat(str(run, "status")).isEqualTo("RUNNING");
+            assertThat(conversation.path("messages")).hasSize(1);
+        } finally {
+            releaseOutput.countDown();
+        }
+
+        ObjectNode preview = waitRun(j);
+        assertThat(str(preview.path("run"), "status")).isEqualTo("WAITING_FOR_CONFIRMATION");
+        assertThat(preview.path("messages")).hasSize(2);
+        assertThat(str(preview.path("messages").get(1), "responseOrigin")).isEqualTo("BACKEND");
     }
 
     @Test
