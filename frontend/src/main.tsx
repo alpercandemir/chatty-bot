@@ -374,7 +374,7 @@ function App() {
                             <span /> Demo environment
                         </span>
                         <a
-                            href={`http://${window.location.hostname}:8080/swagger-ui.html`}
+                            href="/swagger-ui.html"
                             target="_blank"
                             rel="noreferrer"
                         >

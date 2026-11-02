@@ -41,6 +41,7 @@ services:
       AI_LIVE_ONLY: 'true'
       SECURE_COOKIES: 'true'
       PUBLIC_ORIGIN: https://chatty.138.2.168.194.sslip.io
+      FORWARD_HEADERS_STRATEGY: framework
       AI_MODEL_MAX_ROUNDS: ${AI_MODEL_MAX_ROUNDS:-6}
       JAVA_TOOL_OPTIONS: -Xms64m -Xmx384m -XX:MaxMetaspaceSize=160m
     depends_on:
